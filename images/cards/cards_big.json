@@ -1,0 +1,140 @@
+{
+    "": {
+        "image": "group2",
+		"position": 0,
+        "height": 316,
+        "width": 202
+    },
+    "bronze": {
+        "image": "group0",
+		"position": 0,
+        "height": 316,
+        "width": 202
+    },
+    "gold": {
+        "image": "group0",
+		"position": 316,
+        "height": 316,
+        "width": 202
+    },
+    "legend": {
+        "image": "group0",
+		"position": 632,
+        "height": 316,
+        "width": 202
+    },
+    "rare_bronze": {
+        "image": "group0",
+		"position": 948,
+        "height": 316,
+        "width": 202
+    },
+    "rare_gold": {
+        "image": "group0",
+		"position": 1264,
+        "height": 316,
+        "width": 202
+    },
+    "rare_silver": {
+        "image": "group0",
+		"position": 1580,
+        "height": 316,
+        "width": 202
+    },
+    "silver": {
+        "image": "group0",
+		"position": 2260,
+        "height": 316,
+        "width": 202
+    },
+    "aqua": {
+        "image": "group1",
+		"position": 0,
+        "height": 358,
+        "width": 252
+    },
+    "easports": {
+        "image": "group1",
+		"position": 358,
+        "height": 316,
+        "width": 202
+    },
+    "green": {
+        "image": "group1",
+		"position": 674,
+        "height": 316,
+        "width": 202
+    },
+    "motm": {
+        "image": "group1",
+		"position": 990,
+        "height": 316,
+        "width": 202
+    },
+    "pink": {
+        "image": "group1",
+		"position": 1306,
+        "height": 316,
+        "width": 202
+    },
+    "purple": {
+        "image": "group1",
+		"position": 1622,
+        "height": 316,
+        "width": 202
+    },
+    "teal": {
+        "image": "group1",
+		"position": 1938,
+        "height": 316,
+        "width": 202
+    },
+    "tots_bronze": {
+        "image": "group1",
+		"position": 2254,
+        "height": 316,
+        "width": 202
+    },
+    "tots_gold": {
+        "image": "group1",
+		"position": 2570,
+        "height": 316,
+        "width": 202
+    },
+    "tots_silver": {
+        "image": "group1",
+		"position": 2886,
+        "height": 316,
+        "width": 202
+    },
+    "totw_bronze": {
+        "image": "group1",
+		"position": 3202,
+        "height": 316,
+        "width": 202
+    },
+    "totw_gold": {
+        "image": "group1",
+		"position": 3518,
+        "height": 316,
+        "width": 202
+    },
+    "totw_silver": {
+        "image": "group1",
+		"position": 3834,
+        "height": 316,
+        "width": 202
+    },
+    "toty": {
+        "image": "group1",
+		"position": 4150,
+        "height": 316,
+        "width": 202
+    },
+    "concept": {
+        "image": "group2",
+		"position": 316,
+        "height": 316,
+        "width": 202
+    }
+}

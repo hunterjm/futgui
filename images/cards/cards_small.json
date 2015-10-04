@@ -1,0 +1,112 @@
+{
+    "": {
+        "position": 0,
+        "height": 61,
+        "width": 40
+    },
+    "bronze": {
+        "position": 61,
+        "height": 61,
+        "width": 40
+    },
+    "concept": {
+        "position": 122,
+        "height": 61,
+        "width": 41
+    },
+    "easports": {
+        "position": 183,
+        "height": 63,
+        "width": 41
+    },
+    "gold": {
+        "position": 246,
+        "height": 61,
+        "width": 40
+    },
+    "green": {
+        "position": 307,
+        "height": 62,
+        "width": 40
+    },
+    "legend": {
+        "position": 369,
+        "height": 62,
+        "width": 41
+    },
+    "motm": {
+        "position": 431,
+        "height": 62,
+        "width": 40
+    },
+    "pink": {
+        "position": 493,
+        "height": 62,
+        "width": 40
+    },
+    "purple": {
+        "position": 555,
+        "height": 62,
+        "width": 40
+    },
+    "rare_bronze": {
+        "position": 617,
+        "height": 62,
+        "width": 41
+    },
+    "rare_gold": {
+        "position": 679,
+        "height": 62,
+        "width": 41
+    },
+    "rare_silver": {
+        "position": 741,
+        "height": 62,
+        "width": 41
+    },
+    "silver": {
+        "position": 803,
+        "height": 61,
+        "width": 40
+    },
+    "teal": {
+        "position": 864,
+        "height": 62,
+        "width": 40
+    },
+    "tots_bronze": {
+        "position": 926,
+        "height": 63,
+        "width": 41
+    },
+    "tots_gold": {
+        "position": 989,
+        "height": 63,
+        "width": 41
+    },
+    "tots_silver": {
+        "position": 1052,
+        "height": 63,
+        "width": 41
+    },
+    "totw_bronze": {
+        "position": 1115,
+        "height": 63,
+        "width": 41
+    },
+    "totw_gold": {
+        "position": 1178,
+        "height": 63,
+        "width": 41
+    },
+    "totw_silver": {
+        "position": 1241,
+        "height": 63,
+        "width": 41
+    },
+    "toty": {
+        "position": 1304,
+        "height": 63,
+        "width": 41
+    }
+}
