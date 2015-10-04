@@ -102,6 +102,8 @@ class Bid(Base):
             self._errorCount += 1
             if(self._errorCount > 3):
                 self.stop()
+            else:
+                self.after(5000, self.bid)
             pass
 
     def checkResult(self, r):
