@@ -13,6 +13,7 @@ class Bid(Base):
         self._job = None
         self._bidding = False
         self._bidCycle = 0
+        self._errorCount = 0
 
         options = tk.Frame(self, bg='#1d93ab')
         options.grid(column=0, row=0, sticky='ns')
@@ -93,10 +94,14 @@ class Bid(Base):
             self.controller.status.set_status('Bidding on %s: %d' % (self.displayName, self._bidCycle))
             self.controller.status.set_credits(self.controller.api.credits)
             self.after(5000, self.bid)
-        except ExpiredSession as e:
+        except (PermissionDenied, ExpiredSession):
+            self.stop()
             self.controller.show_frame(Login)
-        except FutError:
-            self.updateLog('%s    Unknown Error (%s): %s\n' % (time.strftime('%Y-%m-%d %H:%M:%S'), type(e).__name__, str(e)))
+        except FutError as e:
+            self.updateLog('%s    %s: %s\n' % (time.strftime('%Y-%m-%d %H:%M:%S'), type(e).__name__, str(e)))
+            self._errorCount += 1
+            if(self._errorCount > 3):
+                self.stop()
             pass
 
     def checkResult(self, r):
@@ -112,6 +117,7 @@ class Bid(Base):
         if not self._bidding:
             self._bidding = True
             self._bidCycle = 0
+            self._errorCount = 0
             self.bidbtn.config(text='STOP Bidding', command=self.stop)
             self.update_idletasks()
             self.updateLog('%s    Started bidding...\n' % (time.strftime('%Y-%m-%d %H:%M:%S')))
@@ -121,6 +127,7 @@ class Bid(Base):
         if self._bidding:
             self._bidding = False
             self._bidCycle = 0
+            self._errorCount = 0
             self.controller.status.set_status('Setting bid options for %s...' % self.displayName)
             self.bidbtn.config(text='Start Bidding', command=self.start)
             self.update_idletasks()

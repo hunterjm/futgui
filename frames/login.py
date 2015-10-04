@@ -16,6 +16,7 @@ class Login(Base):
         self.code = tk.StringVar()
         self.platform = tk.StringVar()
         self.data = {}
+        self._keepalive = None
 
         # Search for settings
         try:
@@ -111,7 +112,10 @@ class Login(Base):
     def active(self):
         Base.active(self)
         if self.controller.api is not None:
-            self.controller.show_frame(PlayerSearch)
+            self.controller.api.logout()
+            if self._keepalive is not None:
+                self.after_cancel(self._keepalive)
+                self._keepalive = None
 
 from fut.exceptions import FutError
 from frames.loading import Loading
