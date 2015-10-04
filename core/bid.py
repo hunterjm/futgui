@@ -133,7 +133,6 @@ def bid(q, api, defId, maxBid, sell, binPrice=0, minCredits=1000, trades={}):
     try:
         # Clean up Trade Pile & relist items
         sold = api.relist(clean=True)
-        q.put('%s    Relisting unsold items...\n' % (time.strftime('%Y-%m-%d %H:%M:%S')))
         if sold:
             q.put('%s    Trade Status: %d items sold\n' % (time.strftime('%Y-%m-%d %H:%M:%S'), sold))
             pileFull = False
