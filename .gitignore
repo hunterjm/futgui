@@ -2,3 +2,5 @@
 __pycache__/
 dist/
 build/
+config/login.json
+cookies.txt
