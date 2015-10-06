@@ -24,6 +24,8 @@ def bid(q, api, defId, maxBid, sell, binPrice=0, minCredits=1000, trades={}):
                 asset = api.cardInfo(item['resourceId'])
                 q.put('%s    Card Purchased: BIN %d on %s %s\n' % (time.strftime('%Y-%m-%d %H:%M:%S'), item['buyNowPrice'], asset['Item']['FirstName'], asset['Item']['LastName']))
                 trades[item['tradeId']] = item['resourceId']
+            else:
+                q.put('%s    Bid Error: You are not allowed to bid on this trade\n' % (time.strftime('%Y-%m-%d %H:%M:%S')))
 
 
         # Search first 50 items in my price range to bid on within 5 minutes
@@ -53,6 +55,8 @@ def bid(q, api, defId, maxBid, sell, binPrice=0, minCredits=1000, trades={}):
                 asset = api.cardInfo(item['resourceId'])
                 q.put('%s    New Bid: %d on %s %s\n' % (time.strftime('%Y-%m-%d %H:%M:%S'), bid, asset['Item']['FirstName'], asset['Item']['LastName']))
                 trades[item['tradeId']] = item['resourceId']
+            else:
+                q.put('%s    Bid Error: You are not allowed to bid on this trade\n' % (time.strftime('%Y-%m-%d %H:%M:%S')))
 
 
     # Update watched items
@@ -107,6 +111,8 @@ def bid(q, api, defId, maxBid, sell, binPrice=0, minCredits=1000, trades={}):
             else:
                 if api.bid(tradeId, newBid):
                     q.put('%s    Bidding War: %d on %s %s\n' % (time.strftime('%Y-%m-%d %H:%M:%S'), newBid, asset['Item']['FirstName'], asset['Item']['LastName']))
+                else:
+                    q.put('%s    Bid Error: You are not allowed to bid on this trade\n' % (time.strftime('%Y-%m-%d %H:%M:%S')))
 
     # buy now goes directly to unassigned now
     for item in api.unassigned():

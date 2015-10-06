@@ -94,13 +94,13 @@ class Bid(Base):
             self.controller.status.set_status('Bidding on %s: %d' % (self.displayName, self._bidCycle))
             self.controller.status.set_credits(self.controller.api.credits)
             self.after(5000, self.bid)
-        except (PermissionDenied, ExpiredSession):
+        except ExpiredSession:
             self.stop()
             self.controller.show_frame(Login)
-        except FutError as e:
+        except (FutError, RequestException) as e:
             self.updateLog('%s    %s: %s\n' % (time.strftime('%Y-%m-%d %H:%M:%S'), type(e).__name__, str(e)))
             self._errorCount += 1
-            if(self._errorCount > 3):
+            if self._errorCount >= 3:
                 self.stop()
             else:
                 self.after(5000, self.bid)
@@ -170,3 +170,4 @@ class Bid(Base):
 from frames.login import Login
 from frames.playersearch import PlayerSearch
 from fut.exceptions import FutError, PermissionDenied, ExpiredSession
+from requests.exceptions import RequestException

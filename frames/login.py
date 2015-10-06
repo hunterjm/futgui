@@ -98,16 +98,19 @@ class Login(Base):
             else:
                 raise FutError('Invalid Login Information')
 
-        except FutError as e:
+        except (FutError, RequestException) as e:
             self.controller.show_frame(Login)
             self.master.config(cursor='')
             self.loginlbl.config(text='\nError logging in: ' + str(e))
             self.controller.status.set_status('Error logging in')
 
     def keepalive(self):
-        if self.controller.api is not None:
-            self.controller.api.keepalive()
-        self.after(480000, self.keepalive)
+        try:
+            if self.controller.api is not None:
+                self.controller.api.keepalive()
+            self.after(480000, self.keepalive)
+        except (FutError, RequestException) as e:
+            self.controller.show_frame(Login)
 
     def active(self):
         Base.active(self)
@@ -118,5 +121,6 @@ class Login(Base):
                 self._keepalive = None
 
 from fut.exceptions import FutError
+from requests.exceptions import RequestException
 from frames.loading import Loading
 from frames.playersearch import PlayerSearch
