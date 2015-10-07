@@ -46,7 +46,16 @@ def bid(q, api, defId, maxBid, sell, binPrice=0, minCredits=1000, trades={}):
 
             # Set my initial bid
             if item['currentBid']:
-                bid = item['currentBid'] + 100
+                if item['currentBid'] < 1000:
+                    bid = item['currentBid'] + 50
+                elif item['currentBid'] < 10000:
+                    bid = item['currentBid'] + 100
+                elif item['currentBid'] < 50000:
+                    bid = item['currentBid'] + 250
+                elif item['currentBid'] < 100000:
+                    bid = item['currentBid'] + 500
+                else:
+                    bid = item['currentBid'] + 1000
             else:
                 bid = item['startingBid']
 
