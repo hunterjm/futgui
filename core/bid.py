@@ -1,6 +1,19 @@
 import fut
 import time
 
+def price(bid):
+    if bid < 1000:
+        bid += 50
+    elif bid < 10000:
+        bid += 100
+    elif bid < 50000:
+        bid += 250
+    elif bid < 100000:
+        bid += 500
+    else:
+        bid += 1000
+    return bid
+
 def bid(q, api, defId, maxBid, sell, binPrice=0, minCredits=1000, trades={}):
     pileFull = False
 
@@ -46,16 +59,7 @@ def bid(q, api, defId, maxBid, sell, binPrice=0, minCredits=1000, trades={}):
 
             # Set my initial bid
             if item['currentBid']:
-                if item['currentBid'] < 1000:
-                    bid = item['currentBid'] + 50
-                elif item['currentBid'] < 10000:
-                    bid = item['currentBid'] + 100
-                elif item['currentBid'] < 50000:
-                    bid = item['currentBid'] + 250
-                elif item['currentBid'] < 100000:
-                    bid = item['currentBid'] + 500
-                else:
-                    bid = item['currentBid'] + 1000
+                bid = price(item['currentBid'])
             else:
                 bid = item['startingBid']
 
@@ -111,7 +115,7 @@ def bid(q, api, defId, maxBid, sell, binPrice=0, minCredits=1000, trades={}):
         elif item['bidState'] != 'highest':
 
             # We were outbid
-            newBid = item['currentBid'] + 100
+            newBid = price(item['currentBid'])
             if newBid > maxBid:
                 if api.watchlistDelete(tradeId):
                     q.put('%s    Outbid: Won\'t pay %d for %s %s\n' % (time.strftime('%Y-%m-%d %H:%M:%S'), newBid, asset['Item']['FirstName'], asset['Item']['LastName']))
