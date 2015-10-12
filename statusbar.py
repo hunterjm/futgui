@@ -1,7 +1,7 @@
 import tkinter as tk
 from PIL import ImageTk, Image
 import locale
-locale.setlocale(locale.LC_ALL, 'en_US')
+locale.setlocale(locale.LC_ALL, '')
 
 class StatusBar(tk.Frame):
 
