@@ -1,7 +1,9 @@
 # -*- mode: python -*-
 
 block_cipher = None
-my_data = [('C:\\Users\\Jason\\Documents\\GitHub\\futgui\\images', 'images'), ('C:\\Users\\Jason\\Documents\\GitHub\\futgui\\config', 'config')]
+my_data = [('C:\\Users\\Jason\\Documents\\GitHub\\futgui\\images', 'images'),
+          ('C:\\Users\\Jason\\Documents\\GitHub\\futgui\\fonts', 'fonts'),
+          ('C:\\Users\\Jason\\Documents\\GitHub\\futgui\\config', 'config')]
 
 
 a = Analysis(['FIFA 16 Auto Buyer.py'],
