@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 
 import tkinter as tk
-
+import multiprocessing as mp
 from menubar import MenuBar
 from statusbar import StatusBar
 from application import Application
@@ -34,6 +34,7 @@ class MainApplication(tk.Tk):
 
 
 if __name__ == '__main__':
+    mp.freeze_support()
     app = MainApplication()
     app.lift()
     app.mainloop()
