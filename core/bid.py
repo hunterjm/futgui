@@ -16,6 +16,7 @@ def price(bid):
 
 def bid(q, api, defId, maxBid, sell, binPrice=0, minCredits=1000, trades={}):
     pileFull = False
+    auctionsWon = 0
 
     # Only bid if we don't already have a full trade pile
     if not pileFull and api.credits > minCredits:
@@ -93,6 +94,7 @@ def bid(q, api, defId, maxBid, sell, binPrice=0, minCredits=1000, trades={}):
                 if api.sendToTradepile(tradeId, item['id'], safe=True):
                     # List on market
                     if api.sell(item['id'], sell, binPrice):
+                        auctionsWon += 1
                         q.put('%s    Item Listed: %s %s for %d (%d BIN)\n' % (time.strftime('%Y-%m-%d %H:%M:%S'), asset['Item']['FirstName'], asset['Item']['LastName'], sell, binPrice))
                     pileFull = False
 
@@ -138,6 +140,7 @@ def bid(q, api, defId, maxBid, sell, binPrice=0, minCredits=1000, trades={}):
         if api.sendToTradepile(tradeId, item['id'], safe=True):
             # List on market
             if api.sell(item['id'], sell, binPrice):
+                auctionsWon += 1
                 q.put('%s    Item Listed: %s %s for %d (%d BIN)\n' % (time.strftime('%Y-%m-%d %H:%M:%S'), asset['Item']['FirstName'], asset['Item']['LastName'], sell, binPrice))
             pileFull = False
 
@@ -156,6 +159,7 @@ def bid(q, api, defId, maxBid, sell, binPrice=0, minCredits=1000, trades={}):
             q.put('%s    Trade Status: %d items sold\n' % (time.strftime('%Y-%m-%d %H:%M:%S'), sold))
             pileFull = False
     except InternalServerError:
+        sold = 0
         pass
 
     if pileFull:
@@ -166,5 +170,7 @@ def bid(q, api, defId, maxBid, sell, binPrice=0, minCredits=1000, trades={}):
 
         q.put('%s    Trade Pile Full! Resume bidding in %d seconds\n' % (time.strftime('%Y-%m-%d %H:%M:%S'), selling[0]['expires']))
         time.sleep(selling[0]['expires'])
+
+    q.put((auctionsWon, sold))
 
 from fut.exceptions import InternalServerError

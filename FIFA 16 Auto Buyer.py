@@ -2,6 +2,7 @@
 
 import tkinter as tk
 import multiprocessing as mp
+from sys import platform
 from menubar import MenuBar
 from statusbar import StatusBar
 from application import Application
@@ -19,8 +20,10 @@ class MainApplication(tk.Tk):
         self.minsize(width=650, height=450)
 
         # bind ctrl+a
-        self.bind_class("Entry", "<Control-a>", self.selectall)
-        self.bind_class("Entry", "<Command-a>", self.selectall)
+        if(platform == 'darwin'):
+            self.bind_class("Entry", "<Command-a>", self.selectall)
+        else:
+            self.bind_class("Entry", "<Control-a>", self.selectall)
 
         self.status = StatusBar(self)
         self.status.pack(side='bottom', fill='x')

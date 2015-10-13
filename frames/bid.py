@@ -1,5 +1,6 @@
 import tkinter as tk
 from frames.base import Base
+import multiprocessing as mp
 import queue
 import time
 from PIL import Image, ImageTk
@@ -20,7 +21,8 @@ class Bid(Base):
 
         self.text = tk.Text(self, bg='#1d93ab', fg='#ffeb7e', bd=0)
         self.text.grid(column=1, row=0, sticky='news')
-        self.q = queue.Queue()
+        self.q = mp.Queue()
+        self.p = None
 
         self.maxBid = tk.StringVar()
         self.sell = tk.StringVar()
@@ -74,6 +76,9 @@ class Bid(Base):
     def bid(self):
         if not self._bidding:
             return
+        if self.p is not None and self.p.is_alive():
+            self.after(5000, self.bid)
+            return
         # Populate trades with what I am already watching
         trades = {}
         try:
@@ -81,7 +86,7 @@ class Bid(Base):
                 trades[item['tradeId']] = item['resourceId']
             self._bidding = True
             self._bidCycle += 1
-            bid(
+            self.p = mp.Process(target=bid, args=(
                 self.q,
                 self.controller.api,
                 int(self.args['player']['id']),
@@ -90,8 +95,8 @@ class Bid(Base):
                 int(self.binPrice.get()),
                 int(self.minCredits.get()),
                 trades
-                )
-            self.controller.status.set_status('Bidding on %s: %d' % (self.displayName, self._bidCycle))
+                ))
+            self.p.start()
             self.controller.status.set_credits(self.controller.api.credits)
             self.after(5000, self.bid)
         except ExpiredSession:
@@ -138,7 +143,10 @@ class Bid(Base):
     def checkQueue(self):
         try:
             msg = self.q.get(timeout=0)
-            self.updateLog(msg)
+            if not isinstance(msg, str):
+                self.controller.status.set_status('Bidding on %s: %d - Auctions Won: %d - Items Sold: %d' % (self.displayName, self._bidCycle, msg[0], msg[1]))
+            else:
+                self.updateLog(msg)
         except queue.Empty:
             pass
         finally:
