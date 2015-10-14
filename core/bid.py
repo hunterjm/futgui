@@ -1,5 +1,6 @@
 import fut
 import time
+import multiprocessing as mp
 
 def price(bid):
     if bid < 1000:
@@ -17,6 +18,8 @@ def price(bid):
 def bid(q, api, defId, maxBid, sell, binPrice=0, minCredits=1000, trades={}):
     pileFull = False
     auctionsWon = 0
+
+    api.resetSession()
 
     # Only bid if we don't already have a full trade pile
     if not pileFull and api.credits > minCredits:

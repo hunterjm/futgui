@@ -15,6 +15,8 @@ class Bid(Base):
         self._bidding = False
         self._bidCycle = 0
         self._errorCount = 0
+        self.auctionsWon = 0
+        self.sold = 0
 
         options = tk.Frame(self, bg='#1d93ab')
         options.grid(column=0, row=0, sticky='ns')
@@ -125,6 +127,8 @@ class Bid(Base):
             self._bidding = True
             self._bidCycle = 0
             self._errorCount = 0
+            self.auctionsWon = 0
+            self.sold = 0
             self.bidbtn.config(text='STOP Bidding', command=self.stop)
             self.update_idletasks()
             self.updateLog('%s    Started bidding...\n' % (time.strftime('%Y-%m-%d %H:%M:%S')))
@@ -135,6 +139,8 @@ class Bid(Base):
             self._bidding = False
             self._bidCycle = 0
             self._errorCount = 0
+            self.auctionsWon = 0
+            self.sold = 0
             self.controller.status.set_status('Setting bid options for %s...' % self.displayName)
             self.bidbtn.config(text='Start Bidding', command=self.start)
             self.update_idletasks()
@@ -142,9 +148,11 @@ class Bid(Base):
 
     def checkQueue(self):
         try:
-            msg = self.q.get(timeout=0)
+            msg = self.q.get(False)
             if not isinstance(msg, str):
-                self.controller.status.set_status('Bidding on %s: %d - Auctions Won: %d - Items Sold: %d' % (self.displayName, self._bidCycle, msg[0], msg[1]))
+                self.auctionsWon += msg[0]
+                self.sold += msg[1]
+                self.controller.status.set_status('Bidding on %s: %d - Auctions Won: %d - Items Sold: %d' % (self.displayName, self._bidCycle, self.auctionsWon, self.sold))
             else:
                 self.updateLog(msg)
         except queue.Empty:
