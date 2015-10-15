@@ -4,6 +4,7 @@ from frames.loading import Loading
 from frames.playersearch import PlayerSearch
 from frames.login import Login
 from frames.bid import Bid
+from frames.watch import Watch
 
 class Application(tk.Frame):
     def __init__(self, master):
@@ -26,7 +27,7 @@ class Application(tk.Frame):
         fifaLabel.image = fifaImg
 
         self.frames = {}
-        for F in (Loading, Login, PlayerSearch, Bid):
+        for F in (Loading, Login, PlayerSearch, Bid, Watch):
             frame = F(container, self)
             self.frames[F] = frame
             # put all of the pages in the same location;

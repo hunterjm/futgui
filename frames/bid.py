@@ -50,6 +50,9 @@ class Bid(Base):
         options.grid_rowconfigure(1, weight=0)
         options.grid_rowconfigure(2, weight=1)
 
+        watchBtn = tk.Button(form, text='Watch Player', command=self.watch)
+        watchBtn.grid(column=0, row=0, columnspan=2, padx=5, pady=5)
+
         maxLbl = tk.Label(form, text='Max Bid:')
         maxLbl.grid(column=0, row=1, sticky='e')
         maxEntry = tk.Entry(form, width=8, textvariable=self.maxBid)
@@ -74,6 +77,9 @@ class Bid(Base):
         self.bidbtn.grid(column=0, row=5, columnspan=2, padx=5, pady=5)
 
         self.checkQueue()
+
+    def watch(self):
+        self.controller.show_frame(Watch, player=self.args['player'])
 
     def bid(self):
         if not self._bidding:
@@ -185,5 +191,6 @@ class Bid(Base):
 
 from frames.login import Login
 from frames.playersearch import PlayerSearch
+from frames.watch import Watch
 from fut.exceptions import FutError, PermissionDenied, ExpiredSession
 from requests.exceptions import RequestException

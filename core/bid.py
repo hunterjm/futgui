@@ -162,7 +162,15 @@ def bid(q, api, defId, maxBid, sell, binPrice=0, minCredits=1000, trades={}):
             q.put('%s    Trade Status: %d items sold\n' % (time.strftime('%Y-%m-%d %H:%M:%S'), sold))
             pileFull = False
     except InternalServerError:
+        # auto re-list is down.  We have to do this manually...
         sold = 0
+        for i in api.tradepile():
+            if i['tradeState'] == 'closed':
+                api.tradepileDelete(i['tradeId'])
+                sold += 1
+            if i['tradeState'] == 'expired' and api.baseId(i['resourceId']) == defId:
+                api.sell(i['id'], sell, binPrice)
+
         pass
 
     if pileFull:
