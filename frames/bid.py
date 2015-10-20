@@ -11,7 +11,6 @@ class Bid(Base):
     def __init__(self, master, controller):
         Base.__init__(self, master, controller)
 
-        self._job = None
         self._bidding = False
         self._bidCycle = 0
         self._errorCount = 0
@@ -77,6 +76,7 @@ class Bid(Base):
         self.bidbtn.grid(column=0, row=5, columnspan=2, padx=5, pady=5)
 
         self.checkQueue()
+        self.clearErrors()
 
     def watch(self):
         self.controller.show_frame(Watch, player=self.args['player'])
@@ -155,7 +155,12 @@ class Bid(Base):
     def checkQueue(self):
         try:
             msg = self.q.get(False)
-            if not isinstance(msg, str):
+            if isinstance(msg, Exception):
+                self.updateLog('%s    %s: %s\n' % (time.strftime('%Y-%m-%d %H:%M:%S'), type(msg).__name__, str(msg)))
+                self._errorCount += 1
+                if self._errorCount >= 3:
+                    self.stop()
+            elif not isinstance(msg, str):
                 self.auctionsWon += msg[0]
                 self.sold += msg[1]
                 self.controller.status.set_status('Bidding on %s: %d - Auctions Won: %d - Items Sold: %d' % (self.displayName, self._bidCycle, self.auctionsWon, self.sold))
@@ -165,6 +170,11 @@ class Bid(Base):
             pass
         finally:
             self.after(100, self.checkQueue)
+
+    def clearErrors(self):
+        if self._bidding and self._errorCount > 0:
+            self._errorCount = self._errorCount - 1
+        self.after(900000, self.clearErrors)
 
     def updateLog(self, msg):
         self.text.insert('end',msg)

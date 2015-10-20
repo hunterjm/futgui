@@ -11,7 +11,6 @@ class Watch(Base):
     def __init__(self, master, controller):
         Base.__init__(self, master, controller)
 
-        self._job = None
         self._watching = False
         self._errorCount = 0
         self.q = mp.Queue()
