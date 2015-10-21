@@ -129,7 +129,7 @@ class Bid(Base):
             self.after(500, self.checkResult, (r,))
 
     def start(self):
-        if not self._bidding:
+        if not self._bidding and self.controller.api is not None:
             self._bidding = True
             self._bidCycle = 0
             self._errorCount = 0
@@ -159,7 +159,11 @@ class Bid(Base):
                 self.updateLog('%s    %s: %s\n' % (time.strftime('%Y-%m-%d %H:%M:%S'), type(msg).__name__, str(msg)))
                 self._errorCount += 1
                 if self._errorCount >= 3:
+                    self.updateLog('%s    Too many errors. Will resume in 5 minutes...\n' % (time.strftime('%Y-%m-%d %H:%M:%S')))
                     self.stop()
+                    login = self.controller.get_frame(Login)
+                    login.logout(switchFrame=False)
+                    self.after(300000, self.relogin, (login))
             elif not isinstance(msg, str):
                 self.auctionsWon += msg[0]
                 self.sold += msg[1]
@@ -170,6 +174,10 @@ class Bid(Base):
             pass
         finally:
             self.after(100, self.checkQueue)
+
+    def relogin(self, login):
+        login.login(switchFrame=False)
+        self.start()
 
     def clearErrors(self):
         if self._bidding and self._errorCount > 0:

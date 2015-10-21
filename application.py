@@ -43,3 +43,6 @@ class Application(tk.Frame):
         frame.set_args(kwargs)
         frame.tkraise()
         frame.active()
+
+    def get_frame(self, c):
+        return self.frames[c]

@@ -70,31 +70,34 @@ class Login(Base):
         loginbtn = tk.Button(loginfr, text='Login', command=self.login)
         loginbtn.grid(column=0, row=6, columnspan=2, padx=5, pady=5)
 
-    def login(self):
+    def login(self, switchFrame=True):
         try:
             if self.username.get() and self.password.get() and self.secret.get() and self.platform.get():
                 # Show loading frame
-                self.master.config(cursor='wait')
-                self.master.update()
-                self.controller.show_frame(Loading)
+                if switchFrame:
+                    self.master.config(cursor='wait')
+                    self.master.update()
+                    self.controller.show_frame(Loading)
 
-                # Save settings
-                self.data['username'] = self.username.get()
-                self.data['password'] = self.password.get()
-                self.data['secret'] = self.secret.get()
-                self.data['code'] = self.code.get()
-                self.data['platform'] = self.platform.get()
-                with open('config/login.json', 'w') as f:
-                    json.dump(self.data, f)
+                    # Save settings
+                    self.data['username'] = self.username.get()
+                    self.data['password'] = self.password.get()
+                    self.data['secret'] = self.secret.get()
+                    self.data['code'] = self.code.get()
+                    self.data['platform'] = self.platform.get()
+                    with open('config/login.json', 'w') as f:
+                        json.dump(self.data, f)
 
-                # Start API and update GUI
+                # Start API and update credits
                 self.controller.api = fut.Core(self.username.get(), self.password.get(), self.secret.get(), self.platform.get(), self.code.get())
                 self.controller.status.set_credits(str(self.controller.api.credits))
-                self.controller.status.set_status('Successfully Logged In!')
-                self.master.config(cursor='')
-                self.master.update()
-                self.controller.show_frame(PlayerSearch)
-                self.keepalive()
+                self._keepalive = self.keepalive()
+
+                if switchFrame:
+                    self.controller.status.set_status('Successfully Logged In!')
+                    self.master.config(cursor='')
+                    self.master.update()
+                    self.controller.show_frame(PlayerSearch)
             else:
                 raise FutError('Invalid Login Information')
 
@@ -103,6 +106,17 @@ class Login(Base):
             self.master.config(cursor='')
             self.loginlbl.config(text='\nError logging in: ' + str(e))
             self.controller.status.set_status('Error logging in')
+
+    def logout(self, switchFrame=True):
+        if switchFrame:
+            self.controller.show_frame(Login)
+        else:
+            if self.controller.api is not None:
+                self.controller.api.logout()
+                self.controller.api = None
+                if self._keepalive is not None:
+                    self.after_cancel(self._keepalive)
+                    self._keepalive = None
 
     def keepalive(self):
         try:
@@ -114,11 +128,7 @@ class Login(Base):
 
     def active(self):
         Base.active(self)
-        if self.controller.api is not None:
-            self.controller.api.logout()
-            if self._keepalive is not None:
-                self.after_cancel(self._keepalive)
-                self._keepalive = None
+        self.logout(switchFrame=False)
 
 from fut.exceptions import FutError
 from requests.exceptions import RequestException
