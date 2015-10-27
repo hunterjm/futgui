@@ -14,6 +14,8 @@ class Bid(Base):
         self._bidding = False
         self._bidCycle = 0
         self._errorCount = 0
+        self._banWait = 0
+        self._startTime = 0
         self.auctionsWon = 0
         self.sold = 0
 
@@ -133,8 +135,7 @@ class Bid(Base):
             self._bidding = True
             self._bidCycle = 0
             self._errorCount = 0
-            self.auctionsWon = 0
-            self.sold = 0
+            self._startTime = time.time()
             self.bidbtn.config(text='STOP Bidding', command=self.stop)
             self.update_idletasks()
             self.updateLog('%s    Started bidding...\n' % (time.strftime('%Y-%m-%d %H:%M:%S')))
@@ -145,8 +146,6 @@ class Bid(Base):
             self._bidding = False
             self._bidCycle = 0
             self._errorCount = 0
-            self.auctionsWon = 0
-            self.sold = 0
             self.controller.status.set_status('Setting bid options for %s...' % self.displayName)
             self.bidbtn.config(text='Start Bidding', command=self.start)
             self.update_idletasks()
@@ -159,16 +158,25 @@ class Bid(Base):
                 self.updateLog('%s    %s: %s\n' % (time.strftime('%Y-%m-%d %H:%M:%S'), type(msg).__name__, str(msg)))
                 self._errorCount += 1
                 if self._errorCount >= 3:
-                    self.updateLog('%s    Too many errors. Will resume in 5 minutes...\n' % (time.strftime('%Y-%m-%d %H:%M:%S')))
+                    self._banWait = self._banWait + 1
+                    self.updateLog('%s    Too many errors. Will resume in %d minutes...\n' % (time.strftime('%Y-%m-%d %H:%M:%S'), self._banWait*5))
                     self.stop()
                     login = self.controller.get_frame(Login)
                     login.logout(switchFrame=False)
-                    self.after(300000, self.relogin, (login))
+                    self.after(self._banWait*5*60000, self.relogin, (login))
             elif not isinstance(msg, str):
                 self.auctionsWon += msg[0]
                 self.sold += msg[1]
-                self.controller.status.set_status('Bidding on %s: %d - Auctions Won: %d - Items Sold: %d' % (self.displayName, self._bidCycle, self.auctionsWon, self.sold))
+                self.controller.status.set_stats((self.auctionsWon, self.sold))
+                self.controller.status.set_status('Bidding on %s: %d' % (self.displayName, self._bidCycle))
+                if time.time() - self._startTime > 18000:
+                    self.updateLog('%s    Pausing to prevent ban... Will resume in 1 hour...\n' % (time.strftime('%Y-%m-%d %H:%M:%S')))
+                    self.stop()
+                    login = self.controller.get_frame(Login)
+                    login.logout(switchFrame=False)
+                    self.after(60*60000, self.relogin, (login))
             else:
+                self._banWait = 0
                 self.updateLog(msg)
         except queue.Empty:
             pass
@@ -206,6 +214,8 @@ class Bid(Base):
         self.card.config(image=img)
         self.card.image = img
         self.update_idletasks()
+        self.auctionsWon = 0
+        self.sold = 0
 
 from frames.login import Login
 from frames.playersearch import PlayerSearch
