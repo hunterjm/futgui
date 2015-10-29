@@ -113,7 +113,7 @@ class Bid(Base):
             self.stop()
             self.controller.show_frame(Login)
         except (FutError, RequestException) as e:
-            self.updateLog('%s    %s: %s\n' % (time.strftime('%Y-%m-%d %H:%M:%S'), type(e).__name__, str(e)))
+            self.updateLog('%s    %s: %s (%s)\n' % (time.strftime('%Y-%m-%d %H:%M:%S'), type(e).__name__, e.reason, e.code))
             self._errorCount += 1
             if self._errorCount >= 3:
                 self.stop()
@@ -154,8 +154,8 @@ class Bid(Base):
     def checkQueue(self):
         try:
             msg = self.q.get(False)
-            if isinstance(msg, Exception):
-                self.updateLog('%s    %s: %s\n' % (time.strftime('%Y-%m-%d %H:%M:%S'), type(msg).__name__, str(msg)))
+            if isinstance(msg, FutError):
+                self.updateLog('%s    %s: %s (%s)\n' % (time.strftime('%Y-%m-%d %H:%M:%S'), type(msg).__name__, msg.reason, msg.code))
                 self._errorCount += 1
                 if self._errorCount >= 3:
                     self._banWait = self._banWait + 1

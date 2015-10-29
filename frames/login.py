@@ -104,7 +104,7 @@ class Login(Base):
         except (FutError, RequestException) as e:
             self.controller.show_frame(Login)
             self.master.config(cursor='')
-            self.loginlbl.config(text='\nError logging in: ' + str(e))
+            self.loginlbl.config(text='\nError logging in: %s (%s)' % (e.reason, type(e).__name__))
             self.controller.status.set_status('Error logging in')
 
     def logout(self, switchFrame=True):
