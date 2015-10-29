@@ -9,7 +9,7 @@ from setuptools import setup
 
 APP = ['FIFA 16 Auto Buyer.py']
 DATA_FILES = ['images','fonts','config']
-OPTIONS = {'argv_emulation': True, 'iconfile': '/Users/jason/futgui/logo.icns'}
+OPTIONS = {'argv_emulation': True, 'iconfile': './logo.icns'}
 
 setup(
     app=APP,
