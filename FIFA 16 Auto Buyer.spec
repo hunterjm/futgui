@@ -1,13 +1,13 @@
 # -*- mode: python -*-
 
 block_cipher = None
-my_data = [('C:\\Users\\Jason\\Documents\\GitHub\\futgui\\images', 'images'),
-          ('C:\\Users\\Jason\\Documents\\GitHub\\futgui\\fonts', 'fonts'),
-          ('C:\\Users\\Jason\\Documents\\GitHub\\futgui\\config', 'config')]
+my_data = [('.\\images', 'images'),
+          ('.\\fonts', 'fonts'),
+          ('.\\config', 'config')]
 
 
 a = Analysis(['FIFA 16 Auto Buyer.py'],
-             pathex=['..\\fut', 'C:\\Users\\Jason\\Documents\\GitHub\\futgui'],
+             pathex=['..\\fut', '.'],
              binaries=None,
              datas=my_data,
              hiddenimports=[],
