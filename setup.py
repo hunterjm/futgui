@@ -11,7 +11,11 @@ APP = ['FIFA 16 Auto Buyer.py']
 DATA_FILES = ['images','fonts','config']
 OPTIONS = {'argv_emulation': True, 'iconfile': './logo.icns'}
 
+with open('requirements.txt') as f:
+    requires = f.read().splitlines()
+
 setup(
+    install_requires=requires,
     app=APP,
     data_files=DATA_FILES,
     options={'py2app': OPTIONS},
