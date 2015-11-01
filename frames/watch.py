@@ -20,13 +20,13 @@ class Watch(Base):
         options.grid(column=0, row=0, sticky='ns')
 
         stats = tk.Frame(self, bg='#1d93ab')
-        stats.grid(column=1, row=0)
+        stats.grid(column=1, row=0, pady=50, sticky='ns')
 
         self.grid_rowconfigure(0, weight=1)
         self.grid_columnconfigure(0, weight=0)
         self.grid_columnconfigure(1, weight=1)
 
-        back = tk.Button(options, bg='#1d93ab', text='Back to Bidding', command=self.bid)
+        back = tk.Button(options, bg='#1d93ab', text='Back to Player Search', command=self.show_playersearch)
         back.grid(column=0, row=0, sticky='we')
 
         self.card = tk.Label(options, bg='#1d93ab')
@@ -89,10 +89,10 @@ class Watch(Base):
         finally:
             self.after(100, self.checkQueue)
 
-    def bid(self):
+    def show_playersearch(self):
         if self.p is not None:
             self.p.terminate()
-        self.controller.show_frame(Bid, player=self.args['player'])
+        self.controller.show_frame(PlayerSearch)
 
     def active(self):
         if self.controller.api is None:
@@ -115,6 +115,6 @@ class Watch(Base):
         self.watch()
 
 from frames.login import Login
-from frames.bid import Bid
+from frames.playersearch import PlayerSearch
 from fut.exceptions import FutError, PermissionDenied, ExpiredSession
 from requests.exceptions import RequestException

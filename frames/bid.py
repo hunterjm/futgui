@@ -1,4 +1,5 @@
 import tkinter as tk
+import tkinter.ttk as ttk
 from frames.base import Base
 import multiprocessing as mp
 import queue
@@ -19,7 +20,7 @@ class Bid(Base):
         self.auctionsWon = 0
         self.sold = 0
 
-        options = tk.Frame(self, bg='#1d93ab')
+        options = tk.Frame(self)
         options.grid(column=0, row=0, sticky='ns')
 
         self.text = tk.Text(self, bg='#1d93ab', fg='#ffeb7e', bd=0)
@@ -27,9 +28,6 @@ class Bid(Base):
         self.q = mp.Queue()
         self.p = None
 
-        self.maxBid = tk.StringVar()
-        self.sell = tk.StringVar()
-        self.binPrice = tk.StringVar()
         self.minCredits = tk.StringVar()
         self.minCredits.set(1000)
 
@@ -40,48 +38,33 @@ class Bid(Base):
         back = tk.Button(options, bg='#1d93ab', text='Back to Player Search', command=self.playersearch)
         back.grid(column=0, row=0, sticky='we')
 
-        self.card = tk.Label(options, bg='#1d93ab')
-        self.card.grid(column=0, row=1)
+        self.tree = ttk.Treeview(options, columns=('buy', 'sell', 'bin'), selectmode='browse')
+        self.tree.column('buy', width=50, anchor='center')
+        self.tree.heading('buy', text='Max Bid')
+        self.tree.column('sell', width=50, anchor='center')
+        self.tree.heading('sell', text='Sell')
+        self.tree.column('bin', width=50, anchor='center')
+        self.tree.heading('bin', text='BIN')
+        self.tree.grid(column=0, row=1, sticky='ns')
 
         form = tk.Frame(options, padx=15, pady=15)
-        form.grid(column=0, row=2, sticky='ns')
+        form.grid(column=0, row=2)
 
         options.grid_columnconfigure(0, weight=1)
         options.grid_rowconfigure(0, weight=0)
-        options.grid_rowconfigure(1, weight=0)
-        options.grid_rowconfigure(2, weight=1)
-
-        watchBtn = tk.Button(form, text='Watch Player', command=self.watch)
-        watchBtn.grid(column=0, row=0, columnspan=2, padx=5, pady=5)
-
-        maxLbl = tk.Label(form, text='Max Bid:')
-        maxLbl.grid(column=0, row=1, sticky='e')
-        maxEntry = tk.Entry(form, width=8, textvariable=self.maxBid)
-        maxEntry.grid(column=1, row=1, sticky='w')
-
-        sellLbl = tk.Label(form, text='Sell For:')
-        sellLbl.grid(column=0, row=2, sticky='e')
-        sellEntry = tk.Entry(form, width=8, textvariable=self.sell)
-        sellEntry.grid(column=1, row=2, sticky='w')
-
-        binPriceLbl = tk.Label(form, text='BIN:')
-        binPriceLbl.grid(column=0, row=3, sticky='e')
-        binPriceEntry = tk.Entry(form, width=8, textvariable=self.binPrice)
-        binPriceEntry.grid(column=1, row=3, sticky='w')
+        options.grid_rowconfigure(1, weight=1)
+        options.grid_rowconfigure(2, weight=0)
 
         minCreditsLbl = tk.Label(form, text='Min Credits:')
-        minCreditsLbl.grid(column=0, row=4, sticky='e')
+        minCreditsLbl.grid(column=0, row=0, sticky='e')
         minCreditsEntry = tk.Entry(form, width=8, textvariable=self.minCredits)
-        minCreditsEntry.grid(column=1, row=4, sticky='w')
+        minCreditsEntry.grid(column=1, row=0, sticky='w')
 
         self.bidbtn = tk.Button(form, text='Start Bidding', command=self.start)
-        self.bidbtn.grid(column=0, row=5, columnspan=2, padx=5, pady=5)
+        self.bidbtn.grid(column=0, row=1, columnspan=2, padx=5, pady=5)
 
         self.checkQueue()
         self.clearErrors()
-
-    def watch(self):
-        self.controller.show_frame(Watch, player=self.args['player'])
 
     def bid(self):
         if not self._bidding:
@@ -99,10 +82,7 @@ class Bid(Base):
             self.p = mp.Process(target=bid, args=(
                 self.q,
                 self.controller.api,
-                int(self.args['player']['id']),
-                int(self.maxBid.get()),
-                int(self.sell.get()),
-                int(self.binPrice.get()),
+                self.args['playerList'],
                 int(self.minCredits.get()),
                 trades
                 ))
@@ -146,7 +126,7 @@ class Bid(Base):
             self._bidding = False
             self._bidCycle = 0
             self._errorCount = 0
-            self.controller.status.set_status('Setting bid options for %s...' % self.displayName)
+            self.controller.status.set_status('Set Bid Options...')
             self.bidbtn.config(text='Start Bidding', command=self.start)
             self.update_idletasks()
             self.updateLog('%s    Stopped bidding...\n' % (time.strftime('%Y-%m-%d %H:%M:%S')))
@@ -168,7 +148,7 @@ class Bid(Base):
                 self.auctionsWon += msg[0]
                 self.sold += msg[1]
                 self.controller.status.set_stats((self.auctionsWon, self.sold))
-                self.controller.status.set_status('Bidding on %s: %d' % (self.displayName, self._bidCycle))
+                self.controller.status.set_status('Bidding Cycle: %d' % (self._bidCycle))
                 if time.time() - self._startTime > 18000:
                     self.updateLog('%s    Pausing to prevent ban... Will resume in 1 hour...\n' % (time.strftime('%Y-%m-%d %H:%M:%S')))
                     self.stop()
@@ -207,18 +187,19 @@ class Bid(Base):
 
         Base.active(self)
         self.text.delete(1.0, tk.END)
-        self.displayName = self.args['player']['commonName'] if self.args['player']['commonName'] is not '' else self.args['player']['lastName']
-        self.text.insert(tk.END, '%s    Set Bid Options for %s...\n' % (time.strftime('%Y-%m-%d %H:%M:%S'), self.displayName))
-        self.text.see(tk.END)
-        img = ImageTk.PhotoImage(create(self.args['player']))
-        self.card.config(image=img)
-        self.card.image = img
-        self.update_idletasks()
+        self.updateLog('%s    Set Bid Options...\n' % (time.strftime('%Y-%m-%d %H:%M:%S')))
+        self.controller.status.set_status('Set Bid Options...')
+        self.tree.delete(*self.tree.get_children())
+        for item in self.args['playerList']:
+            displayName = item['player']['commonName'] if item['player']['commonName'] is not '' else item['player']['lastName']
+            try:
+                self.tree.insert('', 'end', item['player']['id'], text=displayName, values=(item['buy'], item['sell'], item['bin']))
+            except: pass
+
         self.auctionsWon = 0
         self.sold = 0
 
 from frames.login import Login
 from frames.playersearch import PlayerSearch
-from frames.watch import Watch
 from fut.exceptions import FutError, PermissionDenied, ExpiredSession
 from requests.exceptions import RequestException

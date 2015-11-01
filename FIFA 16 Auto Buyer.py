@@ -34,6 +34,7 @@ class MainApplication(tk.Tk):
 
     def selectall(self, e):
         e.widget.select_range(0, tk.END)
+        return 'break'
 
 
 if __name__ == '__main__':

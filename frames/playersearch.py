@@ -1,4 +1,5 @@
 import tkinter as tk
+from core.editabletreeview import EditableTreeview
 from frames.base import Base
 import json, requests
 import time
@@ -11,13 +12,14 @@ class PlayerSearch(Base):
         Base.__init__(self, master, controller)
         self.master = master
         self.url = 'https://www.easports.com/uk/fifa/ultimate-team/api/fut/item'
+        self.futbin = 'http://www.futbin.com/pages/16/players/filter_processing.php'
         self._job = None
         self.player = tk.StringVar()
         self._playerName = ''
         search = tk.Entry(self, textvariable=self.player)
         search.bind('<KeyRelease>', self.search)
         search.bind('<Return>', self.lookup)
-        search.grid(column=0, row=0, sticky='we')
+        search.grid(column=0, row=0, columnspan=2, sticky='we')
 
         #preload cards and info
         self.cards = {
@@ -33,9 +35,9 @@ class PlayerSearch(Base):
         #create scrolling frame
         # create a canvas object and a vertical scrollbar for scrolling it
         hscrollbar = tk.Scrollbar(self, orient=tk.HORIZONTAL)
-        hscrollbar.grid(column=0, row=2, sticky='we')
+        hscrollbar.grid(column=0, row=2, columnspan=2, sticky='we')
         canvas = tk.Canvas(self, bd=0, highlightthickness=0, bg='#1d93ab', xscrollcommand=hscrollbar.set)
-        canvas.grid(column=0, row=1, sticky='news')
+        canvas.grid(column=0, row=1, columnspan=2, sticky='news')
         hscrollbar.config(command=canvas.xview)
 
         # reset the view
@@ -64,10 +66,48 @@ class PlayerSearch(Base):
                 canvas.itemconfigure(interior_id, height=canvas.winfo_height())
         canvas.bind('<Configure>', _configure_canvas)
 
+        # Add a treeview to display selected players
+        self.tree = EditableTreeview(self, columns=('position', 'rating', 'buy', 'sell', 'bin', 'actions'), selectmode='browse', height=8)
+        self.tree.column('position', width=100, anchor='center')
+        self.tree.heading('position', text='Position')
+        self.tree.column('rating', width=100, anchor='center')
+        self.tree.heading('rating', text='Rating')
+        self.tree.column('buy', width=100, anchor='center')
+        self.tree.heading('buy', text='Purchase For')
+        self.tree.column('sell', width=100, anchor='center')
+        self.tree.heading('sell', text='Sell For')
+        self.tree.column('bin', width=100, anchor='center')
+        self.tree.heading('bin', text='Sell For BIN')
+        self.tree.column('actions', width=20, anchor='center')
+        self.tree.bind('<<TreeviewInplaceEdit>>', self._on_inplace_edit)
+        self.tree.bind('<<TreeviewCellEdited>>', self._on_cell_edited)
+        self.tree.grid(column=0, row=3, columnspan=2, sticky='we')
+
+        watchbtn = tk.Button(self, text='Watch Player', command=self.show_watch)
+        watchbtn.grid(column=0, row=4, sticky='we')
+
+        bidbtn = tk.Button(self, text='Start Bidding', command=self.show_bid)
+        bidbtn.grid(column=1, row=4, sticky='we')
+
+        self._del_btn = tk.Button(self.tree, text='-', command=self._on_del_clicked)
+
+        # Search for existing list
+        try:
+            with open('config/players.json', 'r') as f:
+                self._playerList = json.load(f)
+        except:
+            self._playerList = []
+
+        for item in self._playerList:
+            self.add_player(item, write=False)
+
         self.grid_columnconfigure(0, weight=1)
+        self.grid_columnconfigure(1, weight=1)
         self.grid_rowconfigure(0, weight=0)
         self.grid_rowconfigure(1, weight=1)
         self.grid_rowconfigure(2, weight=0)
+        self.grid_rowconfigure(3, weight=0)
+        self.grid_rowconfigure(4, weight=0)
 
     def search(self, event=None):
         self.kill_job()
@@ -105,12 +145,77 @@ class PlayerSearch(Base):
         lbl.config(cursor='pencil')
         lbl.image = img
         self.update_idletasks()
-        lbl.bind("<Button-1>", lambda e, player=player: self.show_bid(player))
+        lbl.bind("<Button-1>", lambda e, player=player: self.add_player({
+            'player': player,
+            'buy': 0,
+            'sell': 0,
+            'bin': 0
+            }))
 
-    def show_bid(self, player):
+    def add_player(self, item, write=True):
+        player = item['player']
         displayName = player['commonName'] if player['commonName'] is not '' else player['lastName']
-        self.controller.status.set_status('Setting bid options for %s...' % displayName)
-        self.controller.show_frame(Bid, player=player)
+        try:
+            self.tree.insert('', 'end', player['id'], text=displayName, values=(player['position'], player['rating'], item['buy'], item['sell'], item['bin']))
+            if write:
+                self._playerList.append(item)
+                self.save_list()
+        except: pass
+
+    def save_list(self):
+        with open('config/players.json', 'w') as f:
+                json.dump(self._playerList, f)
+
+    def lookup_bin(self, player):
+        #lookup BIN
+        r = {'xbox': 0, 'ps4': 0}
+        displayName = player['commonName'] if player['commonName'] is not '' else player['lastName']
+        response = requests.get(self.futbin, params={
+            'start': 0,
+            'length': 30,
+            'search[value]': displayName
+            }).json()
+        for p in response['data']:
+            if p[len(p)-2] == player['id']:
+                r = {'xbox': response[8], 'ps4': response[6]}
+        return r
+
+    def _on_inplace_edit(self, event):
+        col, item = self.tree.get_event_info()
+        if col in ('buy', 'sell', 'bin'):
+            self.tree.inplace_entry(col, item)
+        elif col in ('actions',):
+            self.tree.inplace_custom(col, item, self._del_btn)
+
+    def _on_del_clicked(self):
+        sel = self.tree.selection()
+        if sel:
+            item = sel[0]
+            self.tree.delete(item)
+            del self._playerList[next(i for (i, d) in enumerate(self._playerList) if d['player']['id'] == item)]
+            self.save_list()
+
+    def _on_cell_edited(self, event):
+        col, item = self.tree.get_event_info()
+        values = self.tree.item(item, 'values')
+        for player in self._playerList:
+            if player['player']['id'] == item:
+                player['buy'] = int(values[2])
+                player['sell'] = int(values[3])
+                player['bin'] = int(values[4])
+                break
+        self.save_list()
+
+    def show_bid(self):
+        if len(self._playerList) > 0:
+            self.controller.show_frame(Bid, playerList=self._playerList)
+
+    def show_watch(self):
+        sel = self.tree.selection()
+        if sel:
+            item = sel[0]
+            item = self._playerList[next(i for (i, d) in enumerate(self._playerList) if d['player']['id'] == item)]
+            self.controller.show_frame(Watch, player=item['player'])
 
     def kill_job(self):
         if self._job is not None:
@@ -124,4 +229,5 @@ class PlayerSearch(Base):
 
 
 from frames.login import Login
+from frames.watch import Watch
 from frames.bid import Bid
