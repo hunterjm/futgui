@@ -187,16 +187,18 @@ def bid(q, api, playerList, minCredits=1000, trades={}):
                     pileFull = False
             except InternalServerError:
                 # auto re-list is down.  We have to do this manually...
-                q.put('%s    Manually re-listing %d players.\n' % (time.strftime('%Y-%m-%d %H:%M:%S'), sum([i['tradeState'] in ('expired', 'closed') for i in tradepile])))
                 sold = 0
-                for i in tradepile:
-                    sell = bidDetails[str(api.baseId(item['resourceId']))]['sell']
-                    binPrice = bidDetails[str(api.baseId(item['resourceId']))]['binPrice']
-                    if i['tradeState'] == 'closed':
-                        api.tradepileDelete(i['tradeId'])
-                        sold += 1
-                    if i['tradeState'] == 'expired' and sell and binPrice:
-                        api.sell(i['id'], sell, binPrice)
+                completedTrades = sum([i['tradeState'] in ('expired', 'closed') for i in tradepile])
+                if completedTrades > 0:
+                    q.put('%s    Manually re-listing %d players.\n' % (time.strftime('%Y-%m-%d %H:%M:%S'), completedTrades))
+                    for i in tradepile:
+                        sell = bidDetails[str(api.baseId(i['resourceId']))]['sell']
+                        binPrice = bidDetails[str(api.baseId(i['resourceId']))]['binPrice']
+                        if i['tradeState'] == 'closed':
+                            api.tradepileDelete(i['tradeId'])
+                            sold += 1
+                        if i['tradeState'] == 'expired' and sell and binPrice:
+                            api.sell(i['id'], sell, binPrice)
 
                 pass
 
