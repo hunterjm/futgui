@@ -165,7 +165,7 @@ class Bid(Base):
         self.after(900000, self.bid)
 
     def setPrice(self, item, sell):
-        item['buy'] = roundBid(sell*0.9)
+        item['buy'] = roundBid(sell*0.85)
         item['sell'] = sell
         item['bin'] = roundBid(sell*1.25)
         self.tree.set(item['player']['id'], 'buy', item['buy'])

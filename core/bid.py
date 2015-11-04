@@ -31,16 +31,12 @@ def bid(q, api, playerList, minCredits=1000, trades={}):
             'binPrice': item['bin']
             }
 
-    # Grab all items from tradepile
-    try:
-        tradepile = api.tradepile()
-    except FutError:
-        return
-
     for defId in bidDetails.keys():
 
         try:
 
+            # Grab all items from tradepile
+            tradepile = api.tradepile()
             # How many of this item do we already have listed?
             listed = sum([str(api.baseId(item['resourceId'])) == defId for item in tradepile])
 
@@ -191,6 +187,7 @@ def bid(q, api, playerList, minCredits=1000, trades={}):
                     pileFull = False
             except InternalServerError:
                 # auto re-list is down.  We have to do this manually...
+                q.put('%s    Manually re-listing %d players.\n' % (time.strftime('%Y-%m-%d %H:%M:%S'), sum([i['tradeState'] in ('expired', 'closed') for i in tradepile])))
                 sold = 0
                 for i in tradepile:
                     sell = bidDetails[str(api.baseId(item['resourceId']))]['sell']
