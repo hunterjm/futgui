@@ -2,18 +2,20 @@ import fut
 import time
 import multiprocessing as mp
 
-def price(bid):
+def increment(bid):
     if bid < 1000:
-        bid += 50
+        return 50
     elif bid < 10000:
-        bid += 100
+        return 100
     elif bid < 50000:
-        bid += 250
+        return 250
     elif bid < 100000:
-        bid += 500
+        return 500
     else:
-        bid += 1000
-    return bid
+        return 1000
+
+def roundBid(bid):
+    return int(increment(bid) * round(float(bid)/increment(bid)))
 
 def bid(q, api, playerList, minCredits=1000, trades={}):
     pileFull = False
@@ -29,12 +31,21 @@ def bid(q, api, playerList, minCredits=1000, trades={}):
             'binPrice': item['bin']
             }
 
+    # Grab all items from tradepile
+    try:
+        tradepile = api.tradepile()
+    except FutError:
+        return
+
     for defId in bidDetails.keys():
 
         try:
 
-            # Only bid if we don't already have a full trade pile
-            if not pileFull and api.credits > minCredits:
+            # How many of this item do we already have listed?
+            listed = sum([str(api.baseId(item['resourceId'])) == defId for item in tradepile])
+
+            # Only bid if we don't already have a full trade pile and don't own too many of this player
+            if not pileFull and api.credits > minCredits and listed < 20:
 
                 # Look for any BIN less than the BIN price
                 for item in api.searchAuctions('player', defId=defId, max_buy=bidDetails[defId]['maxBid'], start=0, page_size=50):
@@ -57,7 +68,7 @@ def bid(q, api, playerList, minCredits=1000, trades={}):
 
 
                 # Search first 50 items in my price range to bid on within 5 minutes
-                subtract = price(bidDetails[defId]['maxBid']) - bidDetails[defId]['maxBid']
+                subtract = increment(bidDetails[defId]['maxBid'])
                 for item in api.searchAuctions('player', defId=defId, max_price=bidDetails[defId]['maxBid']-subtract, start=0, page_size=50):
 
                     # Let's look at last 5 minutes for now
@@ -74,7 +85,7 @@ def bid(q, api, playerList, minCredits=1000, trades={}):
 
                     # Set my initial bid
                     if item['currentBid']:
-                        bid = price(item['currentBid'])
+                        bid = item['currentBid'] + increment(item['currentBid'])
                     else:
                         bid = item['startingBid']
 
@@ -134,7 +145,7 @@ def bid(q, api, playerList, minCredits=1000, trades={}):
                 elif item['bidState'] != 'highest':
 
                     # We were outbid
-                    newBid = price(item['currentBid'])
+                    newBid = item['currentBid'] + increment(item['currentBid'])
                     if newBid > maxBid:
                         if api.watchlistDelete(tradeId):
                             q.put('%s    Outbid: Won\'t pay %d for %s %s\n' % (time.strftime('%Y-%m-%d %H:%M:%S'), newBid, asset['Item']['FirstName'], asset['Item']['LastName']))
@@ -181,7 +192,7 @@ def bid(q, api, playerList, minCredits=1000, trades={}):
             except InternalServerError:
                 # auto re-list is down.  We have to do this manually...
                 sold = 0
-                for i in api.tradepile():
+                for i in tradepile:
                     sell = bidDetails[str(api.baseId(item['resourceId']))]['sell']
                     binPrice = bidDetails[str(api.baseId(item['resourceId']))]['binPrice']
                     if i['tradeState'] == 'closed':
