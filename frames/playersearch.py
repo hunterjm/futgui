@@ -12,7 +12,6 @@ class PlayerSearch(Base):
         Base.__init__(self, master, controller)
         self.master = master
         self.url = 'https://www.easports.com/uk/fifa/ultimate-team/api/fut/item'
-        self.futbin = 'http://www.futbin.com/pages/16/players/filter_processing.php'
         self._job = None
         self.player = tk.StringVar()
         self._playerName = ''
@@ -165,20 +164,6 @@ class PlayerSearch(Base):
     def save_list(self):
         with open('config/players.json', 'w') as f:
                 json.dump(self._playerList, f)
-
-    def lookup_bin(self, player):
-        #lookup BIN
-        r = {'xbox': 0, 'ps4': 0}
-        displayName = player['commonName'] if player['commonName'] is not '' else player['lastName']
-        response = requests.get(self.futbin, params={
-            'start': 0,
-            'length': 30,
-            'search[value]': displayName
-            }).json()
-        for p in response['data']:
-            if p[len(p)-2] == player['id']:
-                r = {'xbox': response[8], 'ps4': response[6]}
-        return r
 
     def _on_inplace_edit(self, event):
         col, item = self.tree.get_event_info()
