@@ -132,6 +132,8 @@ class Bid(Base):
             self.controller.status.set_status('Set Bid Options...')
             self.bidbtn.config(text='Start Bidding', command=self.start)
             self.update_idletasks()
+            if self.p is not None and self.p.is_alive():
+                self.p.terminate()
             self.updateLog('%s    Stopped bidding...\n' % (time.strftime('%Y-%m-%d %H:%M:%S')))
 
     def updatePrice(self):
@@ -232,8 +234,13 @@ class Bid(Base):
                         displayName = item['player']['commonName'] if item['player']['commonName'] is not '' else item['player']['lastName']
                         if msg['active'] == 0:
                             self._updatedItems.append(item['player']['id'])
-                            if msg['median'] > 0 and msg['bidding'] > 2:
-                                item = self.setPrice(item, msg['minUnsoldList'])
+                            if msg['bidding'] > 2:
+                                if abs(item['sell'] - msg['minUnsoldList'])/item['sell'] > 0.15:
+                                    # Go with median
+                                    item = self.setPrice(item, msg['median'])
+                                else:
+                                    # Go with lowest unsold
+                                    item = self.setPrice(item, msg['minUnsoldList'])
                             else:
                                 self.updateLog('%s    Not enough info to update %s...\n' % (time.strftime('%Y-%m-%d %H:%M:%S'), displayName))
                         elif time.time() - self._lastUpdate > 60:
