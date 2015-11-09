@@ -16,7 +16,7 @@ class MainApplication(tk.Tk):
         #initialize menu
         self.config(menu=MenuBar(self))
         self.title('FIFA 16 Auto Buyer')
-        self.geometry('850x650-5+40')
+        self.geometry('950x650-5+40')
         self.minsize(width=650, height=450)
 
         # bind ctrl+a
