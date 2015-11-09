@@ -1,0 +1,3 @@
+Pillow
+requests
+https://github.com/hunterjm/fut.git
