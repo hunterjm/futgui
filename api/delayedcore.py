@@ -30,7 +30,7 @@ class DelayedCore(fut.Core):
         self.delay = time() + (self.delayInterval * random.uniform(0.75, 1.25))
         try:
             return super(DelayedCore, self).__request__(method, url, *args, **kwargs)
-        except fut.PermissionDenied as e:
+        except fut.exceptions.PermissionDenied as e:
             if e.code == '461':
                 return False
             raise
