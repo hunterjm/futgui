@@ -213,7 +213,8 @@ class Bid(Base):
             updated = True
             for item in self.args['playerList']:
                 lowBin = self.lookup_bin(item['player'])[platform]
-                if item['sell'] and abs(item['sell'] - lowBin)/item['sell'] > 0.1:
+                modifiedSell = item['sell']/self.settings['sell']
+                if item['sell'] and abs(modifiedSell - lowBin)/modifiedSell > 0.1:
                     # Take the long route if it is not within 10% of current setting
                     updated = False
                     break
@@ -303,7 +304,8 @@ class Bid(Base):
                         if msg['active'] == 0:
                             self._updatedItems.append(item['player']['id'])
                             if msg['bidding'] > 2:
-                                if abs(item['sell'] - msg['minUnsoldList'])/item['sell'] > 0.15:
+                                modifiedSell = item['sell']/self.settings['sell']
+                                if abs(modifiedSell - msg['minUnsoldList'])/modifiedSell > 0.15:
                                     # Go with median
                                     item = self.setPrice(item, msg['median'])
                                 else:
