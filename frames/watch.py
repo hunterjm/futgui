@@ -2,8 +2,7 @@ import tkinter as tk
 from frames.base import Base
 import multiprocessing as mp
 import queue
-import time
-from PIL import Image, ImageTk
+from PIL import ImageTk
 from core.playercard import create
 from core.watch import watch
 
@@ -116,5 +115,3 @@ class Watch(Base):
 
 from frames.login import Login
 from frames.playersearch import PlayerSearch
-from fut.exceptions import FutError, PermissionDenied, ExpiredSession
-from requests.exceptions import RequestException

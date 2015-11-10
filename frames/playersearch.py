@@ -2,7 +2,6 @@ import tkinter as tk
 from core.editabletreeview import EditableTreeview
 from frames.base import Base
 import json, requests
-import time
 import multiprocessing as mp
 from PIL import Image, ImageTk
 from core.playercard import create
@@ -120,12 +119,10 @@ class PlayerSearch(Base):
         self.kill_job()
         payload = {'jsonParamObject': json.dumps({'name': self._playerName})}
         response = requests.get(self.url, params=payload).json()
-        count = response['count']# if response['count'] < 5 else 5
         self.controller.status.set_status('Found %d matches for "%s"' % (response['totalResults'], self._playerName))
         for child in self.interior.winfo_children():
             child.destroy()
         p = mp.Pool(processes=mp.cpu_count())
-        # results = p.apply_async(PlayerCard, (self, response['items']))
         results = [p.apply_async(create, (player,)) for player in response['items']]
         self.master.config(cursor='wait')
         self.master.update()

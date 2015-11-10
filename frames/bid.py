@@ -5,9 +5,7 @@ import multiprocessing as mp
 import queue
 import time
 import json, requests
-from PIL import Image, ImageTk
-from core.playercard import create
-from core.bid import bid, increment, roundBid
+from core.bid import bid, roundBid
 from core.watch import watch
 
 class Bid(Base):
@@ -24,17 +22,58 @@ class Bid(Base):
         self.auctionsWon = 0
         self.sold = 0
 
+        self.q = mp.Queue()
+        self.p = None
+
+        self.rpm = tk.StringVar()
+        self.minCredits = tk.StringVar()
+        self.maxPlayer = tk.StringVar()
+        self.autoUpdate = tk.IntVar()
+        self.buy = tk.StringVar()
+        self.sell = tk.StringVar()
+        self.bin = tk.StringVar()
+
+        self.settings = {
+            'rpm': 30,
+            'minCredits': 1000,
+            'maxPlayer': 20,
+            'autoUpdate': 0,
+            'buy': 0.9,
+            'sell': 1,
+            'bin': 1.25
+        }
+
+        # Search for settings
+        try:
+            with open('config/settings.json', 'r') as f:
+                self.settings = json.load(f)
+        except FileNotFoundError:
+            pass
+
+        # Set initial values
+        self.rpm.set(self.settings['rpm'])
+        self.minCredits.set(self.settings['minCredits'])
+        self.maxPlayer.set(self.settings['maxPlayer'])
+        self.autoUpdate.set(self.settings['autoUpdate'])
+        self.buy.set(int(self.settings['buy']*100))
+        self.sell.set(int(self.settings['sell']*100))
+        self.bin.set(int(self.settings['bin']*100))
+
+        # Setup traces
+        self.rpm.trace('w', self.save_settings)
+        self.minCredits.trace('w', self.save_settings)
+        self.maxPlayer.trace('w', self.save_settings)
+        self.autoUpdate.trace('w', self.save_settings)
+        self.buy.trace('w', self.save_settings)
+        self.sell.trace('w', self.save_settings)
+        self.bin.trace('w', self.save_settings)
+
+        # Setup GUI
         options = tk.Frame(self)
         options.grid(column=0, row=0, sticky='ns')
 
         self.text = tk.Text(self, bg='#1d93ab', fg='#ffeb7e', bd=0)
         self.text.grid(column=1, row=0, sticky='news')
-        self.q = mp.Queue()
-        self.p = None
-
-        self.minCredits = tk.StringVar()
-        self.minCredits.set(1000)
-        self.autoUpdate = tk.IntVar()
 
         self.grid_rowconfigure(0, weight=1)
         self.grid_columnconfigure(0, weight=0)
@@ -60,17 +99,43 @@ class Bid(Base):
         options.grid_rowconfigure(1, weight=1)
         options.grid_rowconfigure(2, weight=0)
 
+        rpmLbl = tk.Label(form, text='RPM:')
+        rpmLbl.grid(column=0, row=0, sticky='e')
+        rpmEntry = tk.Entry(form, width=8, textvariable=self.rpm)
+        rpmEntry.grid(column=1, row=0, sticky='w')
+
         minCreditsLbl = tk.Label(form, text='Min Credits:')
-        minCreditsLbl.grid(column=0, row=0, sticky='e')
+        minCreditsLbl.grid(column=0, row=1, sticky='e')
         minCreditsEntry = tk.Entry(form, width=8, textvariable=self.minCredits)
-        minCreditsEntry.grid(column=1, row=0, sticky='w')
+        minCreditsEntry.grid(column=1, row=1, sticky='w')
+
+        maxPlayerLbl = tk.Label(form, text='Max Players:')
+        maxPlayerLbl.grid(column=0, row=2, sticky='e')
+        maxPlayerEntry = tk.Entry(form, width=8, textvariable=self.maxPlayer)
+        maxPlayerEntry.grid(column=1, row=2, sticky='w')
+
         autoUpdateLbl = tk.Label(form, text='Auto Update Pricing:')
-        autoUpdateLbl.grid(column=0, row=1, sticky='e')
+        autoUpdateLbl.grid(column=0, row=3, sticky='e')
         autoUpdateEntry = tk.Checkbutton(form, variable=self.autoUpdate)
-        autoUpdateEntry.grid(column=1, row=1, sticky='w')
+        autoUpdateEntry.grid(column=1, row=3, sticky='w')
+
+        autoBuyLbl = tk.Label(form, text='Auto Bid %:')
+        autoBuyLbl.grid(column=0, row=4, sticky='e')
+        autoBuyEntry = tk.Entry(form, width=8, textvariable=self.buy)
+        autoBuyEntry.grid(column=1, row=4, sticky='w')
+
+        autoSellLbl = tk.Label(form, text='Auto Sell %:')
+        autoSellLbl.grid(column=0, row=5, sticky='e')
+        autoSellEntry = tk.Entry(form, width=8, textvariable=self.sell)
+        autoSellEntry.grid(column=1, row=5, sticky='w')
+
+        autoBINLbl = tk.Label(form, text='Auto BIN %:')
+        autoBINLbl.grid(column=0, row=6, sticky='e')
+        autoBINEntry = tk.Entry(form, width=8, textvariable=self.bin)
+        autoBINEntry.grid(column=1, row=6, sticky='w')
 
         self.bidbtn = tk.Button(form, text='Start Bidding', command=self.start)
-        self.bidbtn.grid(column=0, row=2, columnspan=2, padx=5, pady=5)
+        self.bidbtn.grid(column=0, row=7, columnspan=2, padx=5, pady=5)
 
         self.checkQueue()
         self.clearErrors()
@@ -81,8 +146,11 @@ class Bid(Base):
         if self.p is not None and self.p.is_alive():
             self.after(1000, self.bid)
             return
+        # Update RPM
+        if self.settings['rpm'] > 0:
+            self.controller.api.setRequestDelay(60/self.settings['rpm'])
         # Check if we need to update pricing
-        if self.autoUpdate.get() and time.time() - self._lastUpdate > 3600:
+        if self.settings['autoUpdate'] and time.time() - self._lastUpdate > 3600:
             self.updatePrice()
             return
         # Populate trades with what I am already watching
@@ -95,7 +163,7 @@ class Bid(Base):
                 self.q,
                 self.controller.api,
                 self.args['playerList'],
-                int(self.minCredits.get()),
+                self.settings,
                 trades
                 ))
             self.p.start()
@@ -167,9 +235,9 @@ class Bid(Base):
         self.after(900000, self.bid)
 
     def setPrice(self, item, sell):
-        item['buy'] = roundBid(sell*0.9)
-        item['sell'] = sell
-        item['bin'] = roundBid(sell*1.25)
+        item['buy'] = roundBid(sell*self.settings['buy'])
+        item['sell'] = roundBid(sell*self.settings['sell'])
+        item['bin'] = roundBid(sell*self.settings['bin'])
         self.tree.set(item['player']['id'], 'buy', item['buy'])
         self.tree.set(item['player']['id'], 'sell', item['sell'])
         self.tree.set(item['player']['id'], 'bin', item['bin'])
@@ -179,7 +247,7 @@ class Bid(Base):
         playersearch.tree.set(item['player']['id'], 'bin', item['bin'])
         self.save_list()
         displayName = item['player']['commonName'] if item['player']['commonName'] is not '' else item['player']['lastName']
-        self.updateLog('%s    Setting %s to %d/%d/%d...\n' % (time.strftime('%Y-%m-%d %H:%M:%S'), displayName, item['buy'], item['sell'], item['bin']))
+        self.updateLog('%s    Setting %s to %d/%d/%d (based on %d)...\n' % (time.strftime('%Y-%m-%d %H:%M:%S'), displayName, item['buy'], item['sell'], item['bin'], sell))
         return item
 
 
@@ -275,6 +343,22 @@ class Bid(Base):
         with open('config/players.json', 'w') as f:
                 json.dump(self.args['playerList'], f)
 
+    def save_settings(self, *args):
+        try:
+            self.settings = {
+                'rpm': int(self.rpm.get()) if self.rpm.get() else 0,
+                'minCredits': int(self.minCredits.get()) if self.minCredits.get() else 0,
+                'maxPlayer': int(self.maxPlayer.get()) if self.maxPlayer.get() else 0,
+                'autoUpdate': self.autoUpdate.get(),
+                'buy': int(self.buy.get())/100 if self.buy.get() else 0,
+                'sell': int(self.sell.get())/100 if self.sell.get() else 0,
+                'bin': int(self.bin.get())/100 if self.bin.get() else 0
+            }
+            with open('config/settings.json', 'w') as f:
+                    json.dump(self.settings, f)
+        except:
+            pass
+
     def playersearch(self):
         self.stop()
         self.controller.show_frame(PlayerSearch)
@@ -301,5 +385,5 @@ class Bid(Base):
 
 from frames.login import Login
 from frames.playersearch import PlayerSearch
-from fut.exceptions import FutError, PermissionDenied, ExpiredSession
+from fut.exceptions import FutError, ExpiredSession
 from requests.exceptions import RequestException

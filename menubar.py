@@ -19,9 +19,3 @@ class MenuBar(tk.Menu):
         # helpmenu = tk.Menu(self, tearoff=False)
         # self.add_cascade(label="Help", menu=helpmenu)
         # helpmenu.add_command(label="About...", command=self.callback)
-
-    def quit(self):
-        sys.exit(0)
-
-    def callback(self):
-        print("called the callback!")

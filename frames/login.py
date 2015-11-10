@@ -1,7 +1,7 @@
 import tkinter as tk
 from frames.base import Base
 import json
-import fut
+from api.delayedcore import DelayedCore
 
 class Login(Base):
     def __init__(self, master, controller):
@@ -28,7 +28,7 @@ class Login(Base):
             self.secret.set(self.data['secret'])
             self.code.set(self.data['code'])
             self.platform.set(self.data['platform'])
-        except FileNotFoundError as e:
+        except FileNotFoundError:
             self.platform.set('xbox')
 
         mainframe = tk.Frame(self, bg='#1d93ab')
@@ -89,7 +89,7 @@ class Login(Base):
                         json.dump(self.data, f)
 
                 # Start API and update credits
-                self.controller.api = fut.Core(self.username.get(), self.password.get(), self.secret.get(), self.platform.get(), self.code.get())
+                self.controller.api = DelayedCore(self.username.get(), self.password.get(), self.secret.get(), self.platform.get(), self.code.get())
                 self.controller.status.set_credits(str(self.controller.api.credits))
                 self._keepalive = self.keepalive()
 
@@ -123,7 +123,7 @@ class Login(Base):
             if self.controller.api is not None:
                 self.controller.api.keepalive()
             self.after(480000, self.keepalive)
-        except (FutError, RequestException) as e:
+        except (FutError, RequestException):
             self.controller.show_frame(Login)
 
     def active(self):

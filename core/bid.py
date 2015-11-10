@@ -1,6 +1,5 @@
-import fut
 import time
-import multiprocessing as mp
+from operator import itemgetter
 
 def increment(bid):
     if bid < 1000:
@@ -17,7 +16,7 @@ def increment(bid):
 def roundBid(bid):
     return int(increment(bid) * round(float(bid)/increment(bid)))
 
-def bid(q, api, playerList, minCredits=1000, trades={}):
+def bid(q, api, playerList, settings, trades={}):
     pileFull = False
     auctionsWon = 0
     bidDetails = {}
@@ -41,7 +40,7 @@ def bid(q, api, playerList, minCredits=1000, trades={}):
             listed = sum([str(api.baseId(item['resourceId'])) == defId for item in tradepile])
 
             # Only bid if we don't already have a full trade pile and don't own too many of this player
-            if not pileFull and api.credits > minCredits and listed < 20:
+            if not pileFull and api.credits > settings['minCredits'] and listed < settings['maxPlayer']:
 
                 # Look for any BIN less than the BIN price
                 for item in api.searchAuctions('player', defId=defId, max_buy=bidDetails[defId]['maxBid'], start=0, page_size=50):
@@ -102,7 +101,7 @@ def bid(q, api, playerList, minCredits=1000, trades={}):
                 binPrice = bidDetails[str(api.baseId(item['resourceId']))]['binPrice']
 
                 # Break if we don't have enough credits
-                if api.credits < minCredits:
+                if api.credits < settings['minCredits']:
                     break
 
                 tradeId = item['tradeId']
@@ -217,5 +216,5 @@ def bid(q, api, playerList, minCredits=1000, trades={}):
         except (FutError, RequestException) as e:
             q.put(e)
 
-from fut.exceptions import FutError, PermissionDenied, ExpiredSession, InternalServerError
+from fut.exceptions import FutError, InternalServerError
 from requests.exceptions import RequestException

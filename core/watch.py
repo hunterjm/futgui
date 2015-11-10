@@ -1,7 +1,4 @@
-import fut
-import time
 import math
-import multiprocessing as mp
 
 def watch(q, api, defIds, length=1200):
 

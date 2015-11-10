@@ -229,7 +229,7 @@ class EditableTreeview(ttk.Treeview):
                 textvariable=svar, from_=min, to=max, increment=step)
         sb = self._inplace_widgets[col]
         sb.bind('<Unmap>', lambda e: self.__update_value(col, item))
-        cb.bind('<FocusOut>', lambda e: self.__update_value(col, item))
+        sb.bind('<FocusOut>', lambda e: self.__update_value(col, item))
         self._inplace_widgets_show[col] = True
 
 
