@@ -3,4 +3,5 @@ __pycache__/
 dist/
 build/
 config/*.json
-cookies.txt
+*.txt
+!requirements.txt
