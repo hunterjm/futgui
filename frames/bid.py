@@ -34,7 +34,7 @@ class Bid(Base):
         self.bin = tk.StringVar()
 
         self.settings = {
-            'rpm': 30,
+            'rpm': 20,
             'minCredits': 1000,
             'maxPlayer': 20,
             'autoUpdate': 0,

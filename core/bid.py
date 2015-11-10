@@ -96,13 +96,20 @@ def bid(q, api, playerList, settings, trades={}):
             # Update watched items
             # q.put('%s    Updating watched items...\n' % (time.strftime('%Y-%m-%d %H:%M:%S')))
             for item in api.watchlist():
-                maxBid = bidDetails[str(api.baseId(item['resourceId']))]['maxBid']
-                sell = bidDetails[str(api.baseId(item['resourceId']))]['sell']
-                binPrice = bidDetails[str(api.baseId(item['resourceId']))]['binPrice']
+                baseId = str(api.baseId(item['resourceId']))
+                maxBid = bidDetails[baseId]['maxBid']
+                sell = bidDetails[baseId]['sell']
+                binPrice = bidDetails[baseId]['binPrice']
+                # How many of this item do we already have listed?
+                listed = sum([str(api.baseId(item['resourceId'])) == baseId for item in tradepile])
 
                 # Break if we don't have enough credits
                 if api.credits < settings['minCredits']:
                     break
+
+                # Continue if we already have too many listed
+                if listed >= settings['maxPlayer']:
+                    continue
 
                 tradeId = item['tradeId']
                 asset = api.cardInfo(trades[tradeId])

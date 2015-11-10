@@ -41,4 +41,5 @@ class DelayedCore(fut.Core):
                 result = False
             raise
         self.delayInterval = delayInterval
+        self.delay = time() + (self.delayInterval * random.uniform(0.75, 1.25))
         return result
