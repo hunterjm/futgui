@@ -172,11 +172,16 @@ class Bid(Base):
         except ExpiredSession:
             self.stop()
             self.controller.show_frame(Login)
-        except (FutError, RequestException) as e:
+        except (FutError, RequestException, ConnectionError) as e:
             self.updateLog('%s    %s: %s (%s)\n' % (time.strftime('%Y-%m-%d %H:%M:%S'), type(e).__name__, e.reason, e.code))
             self._errorCount += 1
             if self._errorCount >= 3:
+                self._banWait = self._banWait + 1
+                self.updateLog('%s    Too many errors. Will resume in %d minutes...\n' % (time.strftime('%Y-%m-%d %H:%M:%S'), self._banWait*5))
                 self.stop()
+                login = self.controller.get_frame(Login)
+                login.logout(switchFrame=False)
+                self.after(self._banWait*5*60000, self.relogin, (login))
             else:
                 self.after(2000, self.bid)
             pass
@@ -388,4 +393,4 @@ class Bid(Base):
 from frames.login import Login
 from frames.playersearch import PlayerSearch
 from fut.exceptions import FutError, ExpiredSession
-from requests.exceptions import RequestException
+from requests.exceptions import RequestException, ConnectionError

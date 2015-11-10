@@ -28,17 +28,17 @@ class DelayedCore(fut.Core):
         if self.delay > time():
             sleep(self.delay - time())
         self.delay = time() + (self.delayInterval * random.uniform(0.75, 1.25))
-        try:
-            return super(DelayedCore, self).__request__(method, url, *args, **kwargs)
-        except fut.exceptions.PermissionDenied as e:
-            if e.code == '461':
-                return False
-            raise
+        return super(DelayedCore, self).__request__(method, url, *args, **kwargs)
 
     def bid(self, trade_id, bid):
         # no delay between getting trade info and bidding
         delayInterval = self.delayInterval
         self.delayInterval = 0
-        result = super(DelayedCore, self).bid(trade_id, bid)
+        try:
+            result = super(DelayedCore, self).bid(trade_id, bid)
+        except fut.exceptions.PermissionDenied as e:
+            if e.code == '461':
+                result = False
+            raise
         self.delayInterval = delayInterval
         return result
