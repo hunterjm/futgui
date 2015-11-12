@@ -3,5 +3,6 @@ __pycache__/
 dist/
 build/
 config/*.json
+fut.log
 *.txt
 !requirements.txt

@@ -32,6 +32,9 @@ def bid(q, api, playerList, settings, trades={}):
 
     for defId in bidDetails.keys():
 
+        if bidDetails[defId]['maxBid'] < 100:
+            continue
+
         try:
 
             # Grab all items from tradepile
@@ -107,10 +110,6 @@ def bid(q, api, playerList, settings, trades={}):
                 if api.credits < settings['minCredits']:
                     break
 
-                # Continue if we already have too many listed
-                if listed >= settings['maxPlayer']:
-                    continue
-
                 tradeId = item['tradeId']
                 asset = api.cardInfo(trades[tradeId])
 
@@ -145,6 +144,10 @@ def bid(q, api, playerList, settings, trades={}):
                     del trades[tradeId]
 
                 elif item['bidState'] != 'highest':
+
+                    # Continue if we already have too many listed
+                    if listed >= settings['maxPlayer']:
+                        continue
 
                     # We were outbid
                     newBid = item['currentBid'] + increment(item['currentBid'])
@@ -198,13 +201,15 @@ def bid(q, api, playerList, settings, trades={}):
                 if completedTrades > 0:
                     q.put('%s    Manually re-listing %d players.\n' % (time.strftime('%Y-%m-%d %H:%M:%S'), completedTrades))
                     for i in tradepile:
-                        sell = bidDetails[str(api.baseId(i['resourceId']))]['sell']
-                        binPrice = bidDetails[str(api.baseId(i['resourceId']))]['binPrice']
-                        if i['tradeState'] == 'closed':
-                            api.tradepileDelete(i['tradeId'])
-                            sold += 1
-                        if i['tradeState'] == 'expired' and sell and binPrice:
-                            api.sell(i['id'], sell, binPrice)
+                        baseId = str(api.baseId(i['resourceId']))
+                        if baseId in bidDetails:
+                            sell = bidDetails[baseId]['sell']
+                            binPrice = bidDetails[baseId]['binPrice']
+                            if i['tradeState'] == 'closed':
+                                api.tradepileDelete(i['tradeId'])
+                                sold += 1
+                            if i['tradeState'] == 'expired' and sell and binPrice:
+                                api.sell(i['id'], sell, binPrice)
 
                 pass
 

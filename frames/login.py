@@ -15,6 +15,7 @@ class Login(Base):
         self.secret = tk.StringVar()
         self.code = tk.StringVar()
         self.platform = tk.StringVar()
+        self.debug = tk.IntVar()
         self.data = {}
         self._keepalive = None
 
@@ -67,8 +68,12 @@ class Login(Base):
         platformlbl.grid(column=0, row=5, sticky='e', padx=5, pady=5)
         platformsel = tk.OptionMenu(loginfr, self.platform, 'pc', 'xbox', 'xbox360', 'ps3', 'ps4')
         platformsel.grid(column=1, row=5, sticky='w', padx=5, pady=5)
+        debugLbl = tk.Label(loginfr, text='Enable Debug:', font=('KnulBold', 16, 'bold'))
+        debugLbl.grid(column=0, row=6, sticky='e')
+        autoUpdateEntry = tk.Checkbutton(loginfr, variable=self.debug)
+        autoUpdateEntry.grid(column=1, row=6, sticky='w')
         loginbtn = tk.Button(loginfr, text='Login', command=self.login)
-        loginbtn.grid(column=0, row=6, columnspan=2, padx=5, pady=5)
+        loginbtn.grid(column=0, row=7, columnspan=2, padx=5, pady=5)
 
     def login(self, switchFrame=True):
         try:
@@ -90,7 +95,7 @@ class Login(Base):
 
                 # Start API and update credits
                 cookies_file = self.username.get().split('@')[0]+'.txt'
-                self.controller.api = DelayedCore(self.username.get(), self.password.get(), self.secret.get(), self.platform.get(), self.code.get(), None, False, cookies_file)
+                self.controller.api = DelayedCore(self.username.get(), self.password.get(), self.secret.get(), self.platform.get(), self.code.get(), None, bool(self.debug.get()), cookies_file)
                 self.controller.status.set_credits(str(self.controller.api.credits))
                 self._keepalive = self.keepalive()
 
