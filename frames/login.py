@@ -15,6 +15,7 @@ class Login(Base):
         self.secret = tk.StringVar()
         self.code = tk.StringVar()
         self.platform = tk.StringVar()
+        self.emulate = tk.StringVar()
         self.debug = tk.IntVar()
         self.data = {}
         self._keepalive = None
@@ -29,8 +30,10 @@ class Login(Base):
             self.secret.set(self.data['secret'])
             self.code.set(self.data['code'])
             self.platform.set(self.data['platform'])
+            self.emulate.set(self.data['emulate'])
         except FileNotFoundError:
             self.platform.set('xbox')
+            self.emulate.set('pc')
 
         mainframe = tk.Frame(self, bg='#1d93ab')
         mainframe.pack(expand=True)
@@ -68,16 +71,21 @@ class Login(Base):
         platformlbl.grid(column=0, row=5, sticky='e', padx=5, pady=5)
         platformsel = tk.OptionMenu(loginfr, self.platform, 'pc', 'xbox', 'xbox360', 'ps3', 'ps4')
         platformsel.grid(column=1, row=5, sticky='w', padx=5, pady=5)
+        emulatelbl = tk.Label(loginfr, text='Emulate:', font=('KnulBold', 16, 'bold'))
+        emulatelbl.grid(column=0, row=6, sticky='e', padx=5, pady=5)
+        emulatesel = tk.OptionMenu(loginfr, self.emulate, 'pc', 'android', 'iOS')
+        emulatesel.grid(column=1, row=6, sticky='w', padx=5, pady=5)
         debugLbl = tk.Label(loginfr, text='Enable Debug:', font=('KnulBold', 16, 'bold'))
-        debugLbl.grid(column=0, row=6, sticky='e')
+        debugLbl.grid(column=0, row=7, sticky='e')
         autoUpdateEntry = tk.Checkbutton(loginfr, variable=self.debug)
-        autoUpdateEntry.grid(column=1, row=6, sticky='w')
+        autoUpdateEntry.grid(column=1, row=7, sticky='w')
         loginbtn = tk.Button(loginfr, text='Login', command=self.login)
-        loginbtn.grid(column=0, row=7, columnspan=2, padx=5, pady=5)
+        loginbtn.grid(column=0, row=8, columnspan=2, padx=5, pady=5)
 
     def login(self, switchFrame=True):
+
         try:
-            if self.username.get() and self.password.get() and self.secret.get() and self.platform.get():
+            if self.username.get() and self.password.get() and self.secret.get() and self.platform.get() and self.emulate.get():
                 # Show loading frame
                 if switchFrame:
                     self.master.config(cursor='wait')
@@ -90,12 +98,21 @@ class Login(Base):
                     self.data['secret'] = self.secret.get()
                     self.data['code'] = self.code.get()
                     self.data['platform'] = self.platform.get()
+                    self.data['emulate'] = self.emulate.get()
                     with open('config/login.json', 'w') as f:
                         json.dump(self.data, f)
 
+                # Convert emulate
+                if self.emulate.get() == 'android':
+                    emulate='and'
+                elif self.emulate.get() == 'iOS':
+                    emulate='ios'
+                else:
+                    emulate=None
+
                 # Start API and update credits
                 cookies_file = self.username.get().split('@')[0]+'.txt'
-                self.controller.api = DelayedCore(self.username.get(), self.password.get(), self.secret.get(), self.platform.get(), self.code.get(), None, bool(self.debug.get()), cookies_file)
+                self.controller.api = DelayedCore(self.username.get(), self.password.get(), self.secret.get(), self.platform.get(), self.code.get(), emulate, bool(self.debug.get()), cookies_file)
                 self.controller.status.set_credits(str(self.controller.api.credits))
                 self._keepalive = self.keepalive()
 
