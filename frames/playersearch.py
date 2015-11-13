@@ -1,5 +1,6 @@
 import tkinter as tk
 from core.editabletreeview import EditableTreeview
+from os.path import expanduser
 from frames.base import Base
 import json, requests
 import multiprocessing as mp
@@ -91,7 +92,7 @@ class PlayerSearch(Base):
 
         # Search for existing list
         try:
-            with open('config/players.json', 'r') as f:
+            with open(expanduser("~") + '/.config/futgui/players.json', 'r') as f:
                 self._playerList = json.load(f)
         except:
             self._playerList = []
@@ -159,7 +160,7 @@ class PlayerSearch(Base):
         except: pass
 
     def save_list(self):
-        with open('config/players.json', 'w') as f:
+        with open(expanduser("~") + '/.config/futgui/players.json', 'w') as f:
                 json.dump(self._playerList, f)
 
     def _on_inplace_edit(self, event):

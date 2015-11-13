@@ -7,6 +7,7 @@ import time
 import json, requests
 from core.bid import bid, roundBid
 from core.watch import watch
+from os.path import expanduser
 
 class Bid(Base):
     def __init__(self, master, controller):
@@ -45,7 +46,7 @@ class Bid(Base):
 
         # Search for settings
         try:
-            with open('config/settings.json', 'r') as f:
+            with open(expanduser("~") + '/.config/futgui/settings.json', 'r') as f:
                 self.settings = json.load(f)
         except FileNotFoundError:
             pass
@@ -347,7 +348,7 @@ class Bid(Base):
         self.update_idletasks()
 
     def save_list(self):
-        with open('config/players.json', 'w') as f:
+        with open(expanduser("~") + '/.config/futgui/players.json', 'w') as f:
                 json.dump(self.args['playerList'], f)
 
     def save_settings(self, *args):
@@ -361,7 +362,7 @@ class Bid(Base):
                 'sell': int(self.sell.get())/100 if self.sell.get() else 0,
                 'bin': int(self.bin.get())/100 if self.bin.get() else 0
             }
-            with open('config/settings.json', 'w') as f:
+            with open(expanduser("~") + '/.config/futgui/settings.json', 'w') as f:
                     json.dump(self.settings, f)
         except:
             pass
