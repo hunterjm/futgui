@@ -22,6 +22,15 @@ class DelayedCore(fut.Core):
         self.r.cookies = cookies
         self.r.headers = headers
 
+    def __login__(self, email, passwd, secret_answer, platform='pc', code=None, emulate=None):
+        # no delay for login
+        delayInterval = self.delayInterval
+        self.delayInterval = 0
+        result = super(DelayedCore, self).__login__(email, passwd, secret_answer, platform, code, emulate)
+        self.delayInterval = delayInterval
+        self.delay = time() + (self.delayInterval * random.uniform(0.75, 1.25))
+        return result
+
     def __request__(self, method, url, *args, **kwargs):
         """Prepares headers and sends request. Returns response as a json object."""
         # Rate Limit requests based on delay interval

@@ -48,6 +48,10 @@ def bid(q, api, playerList, settings, trades={}):
                 # Look for any BIN less than the BIN price
                 for item in api.searchAuctions('player', defId=defId, max_buy=bidDetails[defId]['maxBid'], start=0, page_size=50):
 
+                    # player safety checks for every possible bid
+                    if listed < settings['maxPlayer']:
+                        break
+
                     # No Dups
                     if item['tradeId'] in trades:
                         continue
@@ -61,16 +65,19 @@ def bid(q, api, playerList, settings, trades={}):
                         asset = api.cardInfo(item['resourceId'])
                         q.put('%s    Card Purchased: BIN %d on %s %s\n' % (time.strftime('%Y-%m-%d %H:%M:%S'), item['buyNowPrice'], asset['Item']['FirstName'], asset['Item']['LastName']))
                         trades[item['tradeId']] = item['resourceId']
+                        listed += 1
                     else:
                         q.put('%s    Bid Error: You are not allowed to bid on this trade\n' % (time.strftime('%Y-%m-%d %H:%M:%S')))
 
 
                 # Search first 50 items in my price range to bid on within 5 minutes
+                bidon = 0
                 subtract = increment(bidDetails[defId]['maxBid'])
                 for item in api.searchAuctions('player', defId=defId, max_price=bidDetails[defId]['maxBid']-subtract, start=0, page_size=50):
 
-                    # Let's look at last 5 minutes for now
-                    if item['expires'] > 600:
+                    # player safety checks for every possible bid
+                    # Let's look at last 5 minutes for now and bid on 5 players max
+                    if item['expires'] > 600 or bidon >= 5 or listed < settings['maxPlayer']:
                         break
 
                     # No Dups
@@ -92,6 +99,7 @@ def bid(q, api, playerList, settings, trades={}):
                         asset = api.cardInfo(item['resourceId'])
                         q.put('%s    New Bid: %d on %s %s\n' % (time.strftime('%Y-%m-%d %H:%M:%S'), bid, asset['Item']['FirstName'], asset['Item']['LastName']))
                         trades[item['tradeId']] = item['resourceId']
+                        bidon += 1
                     else:
                         q.put('%s    Bid Error: You are not allowed to bid on this trade\n' % (time.strftime('%Y-%m-%d %H:%M:%S')))
 
@@ -124,6 +132,7 @@ def bid(q, api, playerList, settings, trades={}):
                             # List on market
                             if api.sell(item['id'], sell, binPrice):
                                 auctionsWon += 1
+                                listed += 1
                                 q.put('%s    Item Listed: %s %s for %d (%d BIN)\n' % (time.strftime('%Y-%m-%d %H:%M:%S'), asset['Item']['FirstName'], asset['Item']['LastName'], sell, binPrice))
                             pileFull = False
 

@@ -75,14 +75,25 @@ class Watch(Base):
     def checkQueue(self):
         try:
             status = self.q.get(False)
-            self.numwatch.config(text=status['total'])
-            self.numactive.config(text=status['active'])
-            self.numbid.config(text=status['bidding'])
-            self.low.config(text=status['lowest'])
-            self.mid.config(text=status['median'])
-            self.avg.config(text=status['mean'])
-            self.lowUnsold.config(text=status['minUnsoldList'])
-            self.update_idletasks()
+            if isinstance(status, FutError):
+                if isinstance(msg, ExpiredSession):
+                    self._errorCount += 3
+                else:
+                    self._errorCount += 1
+                if self._errorCount >= 3:
+                    if self.p is not None:
+                        self.p.terminate()
+                    self.controller.status.set_status('Too many errors watching trades.  Please re-login.')
+                    self.controller.show_frame(Login)
+            else:
+                self.numwatch.config(text=status['total'])
+                self.numactive.config(text=status['active'])
+                self.numbid.config(text=status['bidding'])
+                self.low.config(text=status['lowest'])
+                self.mid.config(text=status['median'])
+                self.avg.config(text=status['mean'])
+                self.lowUnsold.config(text=status['minUnsoldList'])
+                self.update_idletasks()
         except queue.Empty:
             pass
         finally:
