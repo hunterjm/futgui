@@ -6,6 +6,8 @@ Download pre-built releases on the [releases](https://github.com/hunterjm/futgui
 
 [Piotr Staroszczyk](https://github.com/oczkers) & others - FUT API Library
 
+[Fabiano Francesconi](https://github.com/elbryan)
+
 ### Requirements
 This has only been tested and built with Python 3.5.
 ```
