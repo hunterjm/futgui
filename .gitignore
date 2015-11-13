@@ -6,3 +6,5 @@ config/*.json
 fut.log
 *.txt
 !requirements.txt
+.eggs
+.idea
