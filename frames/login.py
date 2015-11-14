@@ -1,6 +1,8 @@
 import tkinter as tk
-from frames.base import Base
 import json
+import core.constants as constants
+
+from frames.base import Base
 from api.delayedcore import DelayedCore
 from os.path import expanduser
 
@@ -23,7 +25,7 @@ class Login(Base):
 
         # Search for settings
         try:
-            with open(expanduser("~") + '/.config/futgui/login.json', 'r') as f:
+            with open(constants.LOGIN_FILE, 'r') as f:
                 self.data = json.load(f)
 
             self.username.set(self.data['username'])
@@ -100,7 +102,7 @@ class Login(Base):
                     self.data['code'] = self.code.get()
                     self.data['platform'] = self.platform.get()
                     self.data['emulate'] = self.emulate.get()
-                    with open(expanduser("~") + '/.config/futgui/login.json', 'w') as f:
+                    with open(constants.LOGIN_FILE, 'w') as f:
                         json.dump(self.data, f)
 
                 # Convert emulate

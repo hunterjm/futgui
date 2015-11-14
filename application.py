@@ -1,4 +1,9 @@
 import tkinter as tk
+import sys
+import core.constants as constants
+import os.path
+
+from tkinter import messagebox
 from PIL import ImageTk, Image
 from frames.loading import Loading
 from frames.playersearch import PlayerSearch
@@ -8,6 +13,11 @@ from frames.watch import Watch
 
 class Application(tk.Frame):
     def __init__(self, master):
+        if not self.prepare_environment():
+            messagebox.showerror("Error", "Unable to write to your home directory.\n"
+                                          "Make sure {0} exists and it is writable".format(constants.SETTINGS_DIR))
+            sys.exit(1)
+
         self.api = None
         self.status = master.status
         tk.Frame.__init__(self, master, bg='#1d93ab')
@@ -46,3 +56,13 @@ class Application(tk.Frame):
 
     def get_frame(self, c):
         return self.frames[c]
+
+    def prepare_environment(self):
+        """
+        Prepare the environment, namely ensures that the settings folder exists and it is writeable
+        :return: true if the environment is sane, false otherwise
+        """
+        if not os.path.exists(constants.SETTINGS_DIR):
+            os.makedirs(constants.SETTINGS_DIR)
+
+        return os.access(constants.SETTINGS_DIR, os.W_OK)
