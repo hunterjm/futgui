@@ -119,6 +119,9 @@ def bid(q, api, playerList, settings, trades={}):
                     break
 
                 tradeId = item['tradeId']
+                if tradeId not in trades:
+                    break
+
                 asset = api.cardInfo(trades[tradeId])
 
                 # Handle Expired Items
