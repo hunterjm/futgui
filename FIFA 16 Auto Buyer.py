@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
-
 import tkinter as tk
 import multiprocessing as mp
+
 from sys import platform
 from menubar import MenuBar
 from statusbar import StatusBar

@@ -1,4 +1,5 @@
 import time
+
 from operator import itemgetter
 
 def increment(bid):

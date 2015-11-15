@@ -190,7 +190,10 @@ class Bid(Base):
             pass
 
     def start(self):
-        if not self._bidding and self.controller.api is not None:
+        if not self._bidding:
+            if self.controller.api is None:
+                login = self.controller.get_frame(Login)
+                self.relogin(login)
             self._bidding = True
             self._bidCycle = 0
             self._errorCount = 0
@@ -280,7 +283,10 @@ class Bid(Base):
             if isinstance(msg, FutError):
                 # Exception
                 self.updateLog('%s    %s: %s (%s)\n' % (time.strftime('%Y-%m-%d %H:%M:%S'), type(msg).__name__, msg.reason, msg.code))
-                self._errorCount += 1
+                if isinstance(msg, ExpiredSession):
+                    self._errorCount += 3
+                else:
+                    self._errorCount += 1
                 if self._errorCount >= 3:
                     self._banWait = self._banWait + 1
                     self.updateLog('%s    Too many errors. Will resume in %d minutes...\n' % (time.strftime('%Y-%m-%d %H:%M:%S'), self._banWait*5))
