@@ -114,7 +114,7 @@ class Login(Base):
                     emulate=None
 
                 # Start API and update credits
-                cookies_file = self.username.get().split('@')[0]+'.txt'
+                cookies_file = constants.SETTINGS_DIR + self.username.get().split('@')[0]+'.txt'
                 self.controller.api = DelayedCore(self.username.get(), self.password.get(), self.secret.get(), self.platform.get(), self.code.get(), emulate, bool(self.debug.get()), cookies_file)
                 self.controller.status.set_credits(str(self.controller.api.credits))
                 self._keepalive = self.keepalive()
