@@ -10,6 +10,7 @@ from frames.playersearch import PlayerSearch
 from frames.login import Login
 from frames.bid import Bid
 from frames.watch import Watch
+from frames.test import Test
 
 class Application(tk.Frame):
     def __init__(self, master):
@@ -37,7 +38,7 @@ class Application(tk.Frame):
         fifaLabel.image = fifaImg
 
         self.frames = {}
-        for F in (Loading, Login, PlayerSearch, Bid, Watch):
+        for F in (Test, Loading, Login, PlayerSearch, Bid, Watch):
             frame = F(container, self)
             self.frames[F] = frame
             # put all of the pages in the same location;
@@ -45,7 +46,7 @@ class Application(tk.Frame):
             # will be the one that is visible.
             frame.grid(column=0, row=1, sticky='news')
 
-        self.show_frame(Login)
+        self.show_frame(Test)
 
     def show_frame(self, c, **kwargs):
         '''Show a frame for the given class'''

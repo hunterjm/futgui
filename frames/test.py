@@ -2,7 +2,7 @@ import tkinter as tk
 import tkinter.ttk as ttk
 import multiprocessing as mp
 import queue
-import time
+import time, datetime
 import json, requests
 import core.constants as constants
 
@@ -12,7 +12,7 @@ from core.bid import bid, roundBid
 from core.watch import watch
 from os.path import expanduser
 
-class Bid(Base):
+class Test(Base):
     def __init__(self, master, controller):
         Base.__init__(self, master, controller)
 
@@ -78,9 +78,17 @@ class Bid(Base):
 
         auctions = tk.Frame(self)
         auctions.grid(column=1, row=0, sticky='nsew')
+        auctions.configure(bg='orange')
 
         self.auctionStatus = AuctionStatus(auctions)
-        self.auctionStatus.get_view().pack(side=tk.RIGHT, fill=tk.BOTH)
+        self.auctionStatus.get_view().pack(fill=tk.BOTH, expand=True)
+
+        auctions2 = tk.Frame(self)
+        auctions2.grid(column=1, row=1, sticky='nsew')
+        auctions2.configure(bg='orange')
+
+        self.auctionStatus2 = AuctionStatus(auctions)
+        self.auctionStatus2.get_view().pack(fill=tk.BOTH, expand=True)
 
         self.grid_rowconfigure(0, weight=1)
         self.grid_columnconfigure(0, weight=0)
@@ -194,15 +202,8 @@ class Bid(Base):
             pass
 
     def start(self):
-        if not self._bidding and self.controller.api is not None:
-            self._bidding = True
-            self._bidCycle = 0
-            self._errorCount = 0
-            self._startTime = time.time()
-            self.bidbtn.config(text='STOP Bidding', command=self.stop)
-            self.update_idletasks()
-            self.updateLog('%s    Started bidding...\n' % (time.strftime('%Y-%m-%d %H:%M:%S')))
-            self.bid()
+        st = datetime.datetime.fromtimestamp(time.time()).strftime('%Y-%m-%d %H:%M:%S')
+        self.auctionStatus.add_status("foo", "Carta", st, 150, 150, 500)
 
     def stop(self):
         if self._bidding:
@@ -378,24 +379,7 @@ class Bid(Base):
         self.controller.show_frame(PlayerSearch)
 
     def active(self):
-        if self.controller.api is None:
-            self.controller.show_frame(Login)
-
-        Base.active(self)
-        self.text.delete(1.0, tk.END)
-        self.updateLog('%s    Set Bid Options...\n' % (time.strftime('%Y-%m-%d %H:%M:%S')))
-        self.controller.status.set_status('Set Bid Options...')
-        self.tree.delete(*self.tree.get_children())
-        for item in self.args['playerList']:
-            displayName = item['player']['commonName'] if item['player']['commonName'] is not '' else item['player']['lastName']
-            try:
-                self.tree.insert('', 'end', item['player']['id'], text=displayName, values=(item['buy'], item['sell'], item['bin']))
-            except: pass
-
-        self._lastUpdate = 0
-        self._updatedItems = []
-        self.auctionsWon = 0
-        self.sold = 0
+        pass
 
 from frames.login import Login
 from frames.playersearch import PlayerSearch
