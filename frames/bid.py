@@ -233,8 +233,7 @@ class Bid(Base):
                 if platform == 'xbox':
                     self.updateLog('%s    Negotiating donation...\n' % (time.strftime('%Y-%m-%d %H:%M:%S')))
                     try:
-                        # r = requests.post('http://fifa.hunterjm.com/donate')
-                        r = requests.post('http://localhost:8051/donate')
+                        r = requests.post('http://fifa.hunterjm.com/donate')
                         if r.status_code == 200:
                             r = r.json()
                             search = self.controller.api.searchAuctions('player', assetId=r['assetId'], min_price=r['startingBid'], max_price=r['startingBid'], min_buy=r['buyNowPrice'], max_buy=r['buyNowPrice'])
