@@ -4,12 +4,17 @@ import multiprocessing as mp
 import queue
 import time
 import json, requests
+import locale
+import webbrowser
 import core.constants as constants
 
+from tkinter import messagebox
 from frames.base import Base
 from core.bid import bid, roundBid
 from core.watch import watch
 from os.path import expanduser
+
+locale.setlocale(locale.LC_ALL, '')
 
 class Bid(Base):
     def __init__(self, master, controller):
@@ -21,6 +26,7 @@ class Bid(Base):
         self._banWait = 0
         self._startTime = 0
         self._lastUpdate = 0
+        self._lastDonate = 0
         self._updatedItems = []
         self.auctionsWon = 0
         self.sold = 0
@@ -52,6 +58,10 @@ class Bid(Base):
                 self.settings = json.load(f)
         except FileNotFoundError:
             pass
+
+        # do we have a donation in our settings
+        if 'donate' in self.settings:
+            self._lastDonate = self.settings['donate']
 
         # Set initial values
         self.rpm.set(self.settings['rpm'])
@@ -189,11 +199,13 @@ class Bid(Base):
                 self.after(2000, self.bid)
             pass
 
-    def start(self):
+    def start(self, skip=False):
         if not self._bidding:
             if self.controller.api is None:
                 login = self.controller.get_frame(Login)
                 self.relogin(login)
+            if not skip:
+                self.donate()
             self._bidding = True
             self._bidCycle = 0
             self._errorCount = 0
@@ -202,6 +214,41 @@ class Bid(Base):
             self.update_idletasks()
             self.updateLog('%s    Started bidding...\n' % (time.strftime('%Y-%m-%d %H:%M:%S')))
             self.bid()
+
+    def donate(self):
+        # only ask for donations once a day
+        if time.time() - self._lastDonate < 86400:
+            return
+        # Update RPM
+        if self.settings['rpm'] > 0:
+            self.controller.api.setRequestDelay(60/self.settings['rpm'])
+        credits = self.controller.api.credits
+        login = self.controller.get_frame(Login)
+        platform = login.platform.get()
+        donateMsg = 'donate 10k coins to the developer' if platform == 'xbox' else 'make a small donation through PayPal'
+        if credits >= 100000:
+            self._lastDonate = time.time()
+            self.save_settings()
+            if messagebox.askyesno("Donate", "Wow, you've got %s coins! Did we help make all that money? If so, you should consider making a small donation.\n\nWould you like to %s?" % (locale.format("%d", int(credits), grouping=True), donateMsg), icon='question'):
+                if platform == 'xbox':
+                    self.updateLog('%s    Negotiating donation...\n' % (time.strftime('%Y-%m-%d %H:%M:%S')))
+                    try:
+                        # r = requests.post('http://fifa.hunterjm.com/donate')
+                        r = requests.post('http://localhost:8051/donate')
+                        if r.status_code == 200:
+                            r = r.json()
+                            search = self.controller.api.searchAuctions('player', assetId=r['assetId'], min_price=r['startingBid'], max_price=r['startingBid'], min_buy=r['buyNowPrice'], max_buy=r['buyNowPrice'])
+                            if self.controller.api.bid(r['tradeId'], r['buyNowPrice']):
+                                self.controller.api.quickSell(r['id'])
+                                self.updateLog('%s    Thank you so much for supporting this application!\n' % (time.strftime('%Y-%m-%d %H:%M:%S')))
+                            else:
+                                self.updateLog('%s    Unfortunately, the donation did not go through.  Please try again later.\n' % (time.strftime('%Y-%m-%d %H:%M:%S')))
+                        else:
+                            self.updateLog('%s    Unfortunately, the donation did not go through.  Please try again later.\n' % (time.strftime('%Y-%m-%d %H:%M:%S')))
+                    except (FutError, RequestException):
+                        self.updateLog('%s    Unfortunately, the donation did not go through.  Please try again later.\n' % (time.strftime('%Y-%m-%d %H:%M:%S')))
+                else:
+                    webbrowser.open_new_tab('https://www.paypal.com/cgi-bin/webscr?cmd=_donations&business=hunterjm%40gmail%2ecom&lc=US&item_name=FIFA%2016%20Auto%20Buyer&item_number=futgui&currency_code=USD&bn=PP%2dDonationsBF%3abtn_donateCC_LG%2egif%3aNonHosted')
 
     def stop(self):
         if self._bidding:
@@ -343,7 +390,7 @@ class Bid(Base):
 
     def relogin(self, login):
         login.login(switchFrame=False)
-        self.start()
+        self.start(True)
 
     def clearErrors(self):
         if self._bidding and self._errorCount > 0:
@@ -368,7 +415,8 @@ class Bid(Base):
                 'autoUpdate': self.autoUpdate.get(),
                 'buy': int(self.buy.get())/100 if self.buy.get() else 0,
                 'sell': int(self.sell.get())/100 if self.sell.get() else 0,
-                'bin': int(self.bin.get())/100 if self.bin.get() else 0
+                'bin': int(self.bin.get())/100 if self.bin.get() else 0,
+                'donate': self._lastDonate
             }
             with open(constants.SETTINGS_FILE, 'w') as f:
                     json.dump(self.settings, f)
