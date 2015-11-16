@@ -1,4 +1,5 @@
 import json, requests
+
 from PIL import Image, ImageDraw, ImageFont
 from io import BytesIO
 

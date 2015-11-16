@@ -1,4 +1,5 @@
 import time
+
 from operator import itemgetter
 
 def increment(bid):
@@ -108,6 +109,8 @@ def bid(q, api, playerList, settings, trades={}):
             # q.put('%s    Updating watched items...\n' % (time.strftime('%Y-%m-%d %H:%M:%S')))
             for item in api.watchlist():
                 baseId = str(api.baseId(item['resourceId']))
+                if not baseId in bidDetails:
+                    continue
                 maxBid = bidDetails[baseId]['maxBid']
                 sell = bidDetails[baseId]['sell']
                 binPrice = bidDetails[baseId]['binPrice']
@@ -119,6 +122,9 @@ def bid(q, api, playerList, settings, trades={}):
                     break
 
                 tradeId = item['tradeId']
+                if tradeId not in trades:
+                    break
+
                 asset = api.cardInfo(trades[tradeId])
 
                 # Handle Expired Items
@@ -173,9 +179,12 @@ def bid(q, api, playerList, settings, trades={}):
 
             # buy now goes directly to unassigned now
             for item in api.unassigned():
-                maxBid = bidDetails[str(api.baseId(item['resourceId']))]['maxBid']
-                sell = bidDetails[str(api.baseId(item['resourceId']))]['sell']
-                binPrice = bidDetails[str(api.baseId(item['resourceId']))]['binPrice']
+                baseId = str(api.baseId(item['resourceId']))
+                if not baseId in bidDetails:
+                    continue
+                maxBid = bidDetails[baseId]['maxBid']
+                sell = bidDetails[baseId]['sell']
+                binPrice = bidDetails[baseId]['binPrice']
 
                 tradeId = item['tradeId'] if item['tradeId'] is not None else -1
                 asset = api.cardInfo(item['resourceId'])

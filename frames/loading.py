@@ -1,4 +1,5 @@
 import tkinter as tk
+
 from frames.base import Base
 from PIL import Image, ImageTk
 

@@ -2,8 +2,7 @@
 
 block_cipher = None
 my_data = [('.\\images', 'images'),
-          ('.\\fonts', 'fonts'),
-          ('.\\config', 'config')]
+          ('.\\fonts', 'fonts')]
 
 
 a = Analysis(['FIFA 16 Auto Buyer.py'],
