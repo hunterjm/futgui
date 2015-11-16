@@ -7,7 +7,7 @@ import json, requests
 import core.constants as constants
 
 from frames.base import Base
-from frames.misc.auctionStatus import AuctionStatus
+from frames.misc.auctions import Auctions, Card
 from core.bid import bid, roundBid
 from core.watch import watch
 from os.path import expanduser
@@ -80,15 +80,11 @@ class Test(Base):
         auctions.grid(column=1, row=0, sticky='nsew')
         auctions.configure(bg='orange')
 
-        self.auctionStatus = AuctionStatus(auctions)
-        self.auctionStatus.get_view().pack(fill=tk.BOTH, expand=True)
+        self.auctionStatus = Auctions(auctions)
+        self.auctionStatus.get_view().grid(column=0, row=0, sticky='nswe')
 
-        auctions2 = tk.Frame(self)
-        auctions2.grid(column=1, row=1, sticky='nsew')
-        auctions2.configure(bg='orange')
-
-        self.auctionStatus2 = AuctionStatus(auctions)
-        self.auctionStatus2.get_view().pack(fill=tk.BOTH, expand=True)
+        self.logView = tk.Text(auctions, bg='#1d93ab', fg='#ffeb7e', bd=0)
+        self.logView.grid(column=0, row=1, sticky='ns')
 
         self.grid_rowconfigure(0, weight=1)
         self.grid_columnconfigure(0, weight=0)
@@ -202,8 +198,11 @@ class Test(Base):
             pass
 
     def start(self):
+        card = Card()
+        card.cardid = 1
+        card.cardname = "Balotelli"
         st = datetime.datetime.fromtimestamp(time.time()).strftime('%Y-%m-%d %H:%M:%S')
-        self.auctionStatus.add_status("foo", "Carta", st, 150, 150, 500)
+        self.auctionStatus.add_auction(card, st, 150, 150, 500)
 
     def stop(self):
         if self._bidding:
@@ -350,8 +349,8 @@ class Test(Base):
         self.after(900000, self.clearErrors)
 
     def updateLog(self, msg):
-        self.text.insert('end',msg)
-        self.text.see(tk.END)
+        self.logView.insert('end',msg)
+        self.logView.see(tk.END)
         self.update_idletasks()
 
     def save_list(self):

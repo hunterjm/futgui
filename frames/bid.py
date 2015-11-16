@@ -7,7 +7,7 @@ import json, requests
 import core.constants as constants
 
 from frames.base import Base
-from frames.misc.auctionStatus import AuctionStatus
+from frames.misc.auctions import Auctions, Card
 from core.bid import bid, roundBid
 from core.watch import watch
 from os.path import expanduser
@@ -78,9 +78,13 @@ class Bid(Base):
 
         auctions = tk.Frame(self)
         auctions.grid(column=1, row=0, sticky='nsew')
+        auctions.configure(bg='orange')
 
-        self.auctionStatus = AuctionStatus(auctions)
-        self.auctionStatus.get_view().pack(side=tk.RIGHT, fill=tk.BOTH)
+        self.auctionStatus = Auctions(auctions)
+        self.auctionStatus.get_view().grid(column=0, row=0, sticky='nswe')
+
+        self.logView = tk.Text(auctions, bg='#1d93ab', fg='#ffeb7e', bd=0)
+        self.logView.grid(column=0, row=1, sticky='ns')
 
         self.grid_rowconfigure(0, weight=1)
         self.grid_columnconfigure(0, weight=0)
@@ -349,8 +353,8 @@ class Bid(Base):
         self.after(900000, self.clearErrors)
 
     def updateLog(self, msg):
-        self.text.insert('end',msg)
-        self.text.see(tk.END)
+        self.logView.insert('end',msg)
+        self.logView.see(tk.END)
         self.update_idletasks()
 
     def save_list(self):
@@ -382,7 +386,7 @@ class Bid(Base):
             self.controller.show_frame(Login)
 
         Base.active(self)
-        self.text.delete(1.0, tk.END)
+        self.logView.delete(1.0, tk.END)
         self.updateLog('%s    Set Bid Options...\n' % (time.strftime('%Y-%m-%d %H:%M:%S')))
         self.controller.status.set_status('Set Bid Options...')
         self.tree.delete(*self.tree.get_children())

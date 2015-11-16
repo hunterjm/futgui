@@ -1,6 +1,7 @@
 import tkinter.ttk as ttk
 
-class AuctionStatus():
+class Auctions():
+    cards = {}
 
     def __init__(self, frame):
         t = ttk.Treeview(frame)
@@ -19,21 +20,25 @@ class AuctionStatus():
         t.heading("current bid", text="current bid")
         t.heading("bin", text="BIN")
 
-        t.insert("",0,"dir1",text="directory 1")
-        t.insert("dir1","end","dir 1",text="file 1 1",values=("file 1 A","file 1 B"))
-        t.insert("", "end", "Alonso", text="Alsd", values=("foo", "bar"))
+        # t.insert("",0,"dir1",text="directory 1")
+        # t.insert("dir1","end","dir 1",text="file 1 1",values=("file 1 A","file 1 B"))
+        # t.insert("", "end", "Alonso", text="Alsd", values=("foo", "bar"))
 
         self.view = t
 
     def get_view(self):
         return self.view
 
-    def add_status(self, cardid, cardname, timestamp, initbid, currbid, bin):
-        return self.view.insert("", 'end', cardid, text=cardname, values=(timestamp, initbid, currbid, bin))
+    def add_auction(self, card, timestamp, initbid, currbid, bin):
+        return self.view.insert("", 'end', card.cardid, text=card.cardname, values=(timestamp, initbid, currbid, bin))
 
-    def change_status(self, item, values):
-        index = self.view.index(item)
-        itemtext = self.view.item(item)['text']
+    def update_status(self, card, values):
+        index = self.view.index(card.cardid)
+        itemtext = self.view.item(card.cardid)['text']
 
-        self.view.delete(item)
-        return self.view.insert("", index, item, text=itemtext, values=values)
+        self.view.delete(card.cardid)
+        return self.view.insert("", index, card.cardid, text=itemtext, values=values)
+
+class Card():
+    cardid = None
+    cardname = None
