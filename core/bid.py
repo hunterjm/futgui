@@ -1,6 +1,7 @@
 import time
 
 from operator import itemgetter
+from frames.misc.auctions import Card, PlayerCard, EventType
 
 def increment(bid):
     if bid < 1000:
@@ -48,6 +49,8 @@ def bid(q, api, playerList, settings, trades={}):
 
                 # Look for any BIN less than the BIN price
                 for item in api.searchAuctions('player', defId=defId, max_buy=bidDetails[defId]['maxBid'], start=0, page_size=50):
+                    asset = api.cardInfo(item['resourceId'])
+                    card = PlayerCard(item, "%s %s" % (asset['Item']['FirstName'], asset['Item']['LastName']))
 
                     # player safety checks for every possible bid
                     if listed >= settings['maxPlayer']:
@@ -63,7 +66,7 @@ def bid(q, api, playerList, settings, trades={}):
 
                     # Buy!!!
                     if api.bid(item['tradeId'], item['buyNowPrice']):
-                        asset = api.cardInfo(item['resourceId'])
+                        q.put((card, EventType.BIN))
                         q.put('%s    Card Purchased: BIN %d on %s %s\n' % (time.strftime('%Y-%m-%d %H:%M:%S'), item['buyNowPrice'], asset['Item']['FirstName'], asset['Item']['LastName']))
                         trades[item['tradeId']] = item['resourceId']
                         listed += 1
@@ -75,6 +78,8 @@ def bid(q, api, playerList, settings, trades={}):
                 bidon = 0
                 subtract = increment(bidDetails[defId]['maxBid'])
                 for item in api.searchAuctions('player', defId=defId, max_price=bidDetails[defId]['maxBid']-subtract, start=0, page_size=50):
+                    asset = api.cardInfo(item['resourceId'])
+                    card = PlayerCard(item, "%s %s" % (asset['Item']['FirstName'], asset['Item']['LastName']))
 
                     # player safety checks for every possible bid
                     # Let's look at last 5 minutes for now and bid on 5 players max
@@ -97,7 +102,8 @@ def bid(q, api, playerList, settings, trades={}):
 
                     # Bid!!!
                     if api.bid(item['tradeId'], bid):
-                        asset = api.cardInfo(item['resourceId'])
+                        card.currentBid = bid
+                        q.put((card, EventType.NEWBID))
                         q.put('%s    New Bid: %d on %s %s\n' % (time.strftime('%Y-%m-%d %H:%M:%S'), bid, asset['Item']['FirstName'], asset['Item']['LastName']))
                         trades[item['tradeId']] = item['resourceId']
                         bidon += 1
@@ -106,7 +112,7 @@ def bid(q, api, playerList, settings, trades={}):
 
 
             # Update watched items
-            # q.put('%s    Updating watched items...\n' % (time.strftime('%Y-%m-%d %H:%M:%S')))
+            q.put('%s    Updating watched items...\n' % (time.strftime('%Y-%m-%d %H:%M:%S')))
             for item in api.watchlist():
                 baseId = str(api.baseId(item['resourceId']))
                 if not baseId in bidDetails:
@@ -126,6 +132,7 @@ def bid(q, api, playerList, settings, trades={}):
                     break
 
                 asset = api.cardInfo(trades[tradeId])
+                card = PlayerCard(item, "%s %s" % (asset['Item']['FirstName'], asset['Item']['LastName']))
 
                 # Handle Expired Items
                 if item['expires'] == -1:
@@ -133,6 +140,7 @@ def bid(q, api, playerList, settings, trades={}):
                     if (item['bidState'] == 'highest' or (item['tradeState'] == 'closed' and item['bidState'] == 'buyNow')):
 
                         # We won! Send to Pile!
+                        q.put((card, EventType.BIDWON))
                         q.put('%s    Auction Won: %d on %s %s\n' % (time.strftime('%Y-%m-%d %H:%M:%S'), item['currentBid'], asset['Item']['FirstName'], asset['Item']['LastName']))
                         if api.sendToTradepile(tradeId, item['id'], safe=True):
                             # List on market
@@ -150,8 +158,10 @@ def bid(q, api, playerList, settings, trades={}):
                         if api.watchlistDelete(tradeId):
 
                             if item['currentBid'] < maxBid:
+                                q.put((card, EventType.LOST))
                                 q.put('%s    TOO SLOW: %s %s went for %d\n' % (time.strftime('%Y-%m-%d %H:%M:%S'), asset['Item']['FirstName'], asset['Item']['LastName'], item['currentBid']))
                             else:
+                                q.put((card, EventType.LOST))
                                 q.put('%s    Auction Lost: %s %s went for %d\n' % (time.strftime('%Y-%m-%d %H:%M:%S'), asset['Item']['FirstName'], asset['Item']['LastName'], item['currentBid']))
 
 
@@ -168,11 +178,14 @@ def bid(q, api, playerList, settings, trades={}):
                     newBid = item['currentBid'] + increment(item['currentBid'])
                     if newBid > maxBid:
                         if api.watchlistDelete(tradeId):
+                            q.put((card, EventType.OUTBID))
                             q.put('%s    Outbid: Won\'t pay %d for %s %s\n' % (time.strftime('%Y-%m-%d %H:%M:%S'), newBid, asset['Item']['FirstName'], asset['Item']['LastName']))
                             del trades[tradeId]
 
                     else:
                         if api.bid(tradeId, newBid):
+                            card.currentBid = newBid
+                            q.put((card, EventType.BIDWAR))
                             q.put('%s    Bidding War: %d on %s %s\n' % (time.strftime('%Y-%m-%d %H:%M:%S'), newBid, asset['Item']['FirstName'], asset['Item']['LastName']))
                         else:
                             q.put('%s    Bid Error: You are not allowed to bid on this trade\n' % (time.strftime('%Y-%m-%d %H:%M:%S')))
@@ -188,8 +201,10 @@ def bid(q, api, playerList, settings, trades={}):
 
                 tradeId = item['tradeId'] if item['tradeId'] is not None else -1
                 asset = api.cardInfo(item['resourceId'])
+                card = PlayerCard(item, "%s %s" % (asset['Item']['FirstName'], asset['Item']['LastName']))
 
                 # We won! Send to Pile!
+                q.put((card, EventType.BIDWON))
                 q.put('%s    Auction Won: %d on %s %s\n' % (time.strftime('%Y-%m-%d %H:%M:%S'), item['lastSalePrice'], asset['Item']['FirstName'], asset['Item']['LastName']))
                 if api.sendToTradepile(tradeId, item['id'], safe=True):
                     # List on market

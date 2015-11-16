@@ -7,7 +7,7 @@ import json, requests
 import core.constants as constants
 
 from frames.base import Base
-from frames.misc.auctions import Auctions, Card
+from frames.misc.auctions import Auctions, Card, EventType
 from core.bid import bid, roundBid
 from core.watch import watch
 from os.path import expanduser
@@ -303,17 +303,27 @@ class Bid(Base):
                     login.logout(switchFrame=False)
                     self.after(self._banWait*5*60000, self.relogin, (login))
             elif isinstance(msg, tuple):
-                # Auction Results
-                self.auctionsWon += msg[0]
-                self.sold += msg[1]
-                self.controller.status.set_stats((self.auctionsWon, self.sold))
-                self.controller.status.set_status('Bidding Cycle: %d' % (self._bidCycle))
-                if time.time() - self._startTime > 18000:
-                    self.updateLog('%s    Pausing to prevent ban... Will resume in 1 hour...\n' % (time.strftime('%Y-%m-%d %H:%M:%S')))
-                    self.stop()
-                    login = self.controller.get_frame(Login)
-                    login.logout(switchFrame=False)
-                    self.after(60*60000, self.relogin, (login))
+                if isinstance(msg[0], Card) and isinstance(msg[1], EventType):
+                    if msg[1] == EventType.BIDWAR:
+                        self.auctionStatus.update_status(msg[0], time.strftime('%Y-%m-%d %H:%M:%S'), msg[0].currentBid, tag='war')
+                    elif msg[1] == EventType.NEWBID:
+                        self.auctionStatus.update_status(msg[0], time.strftime('%Y-%m-%d %H:%M:%S'), msg[0].currentBid, tag='bid')
+                    elif (msg[1] == EventType.LOST or msg[1] == EventType.OUTBID):
+                        self.auctionStatus.update_status(msg[0], time.strftime('%Y-%m-%d %H:%M:%S'), msg[0].currentBid, tag='lost')
+                    elif (msg[1] == EventType.BIDWON or msg[1] == EventType.BIN):
+                        self.auctionStatus.update_status(msg[0], time.strftime('%Y-%m-%d %H:%M:%S'), msg[0].currentBid, tag='won')
+                else:
+                    # Auction Results
+                    self.auctionsWon += msg[0]
+                    self.sold += msg[1]
+                    self.controller.status.set_stats((self.auctionsWon, self.sold))
+                    self.controller.status.set_status('Bidding Cycle: %d' % (self._bidCycle))
+                    if time.time() - self._startTime > 18000:
+                        self.updateLog('%s    Pausing to prevent ban... Will resume in 1 hour...\n' % (time.strftime('%Y-%m-%d %H:%M:%S')))
+                        self.stop()
+                        login = self.controller.get_frame(Login)
+                        login.logout(switchFrame=False)
+                        self.after(60*60000, self.relogin, (login))
             elif isinstance(msg, dict):
                 # Update Pricing
                 self._lastUpdate = time.time()
