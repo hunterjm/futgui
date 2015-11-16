@@ -356,8 +356,9 @@ class Bid(Base):
         self.update_idletasks()
 
     def save_list(self):
+        self.args['playerFile'][self.controller.user] = self.args['playerList']
         with open(constants.PLAYERS_FILE, 'w') as f:
-                json.dump(self.args['playerList'], f)
+                json.dump(self.args['playerFile'], f)
 
     def save_settings(self, *args):
         try:

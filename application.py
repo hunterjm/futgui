@@ -19,6 +19,7 @@ class Application(tk.Frame):
             sys.exit(1)
 
         self.api = None
+        self.user = None
         self.status = master.status
         tk.Frame.__init__(self, master, bg='#1d93ab')
 
