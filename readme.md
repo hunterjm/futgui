@@ -20,7 +20,7 @@ make macbundle
 ```
 
 ### Build (Windows):
-Make sure to delete `build` and `dist` folders before re-building, as well as `config\login.json`, `config\players.json`, and `config\settings.json` (unless you *want* to give your credentials out).
+Make sure to delete `build` and `dist` folders before re-building.
 ```
 pyinstaller '.\FIFA 16 Auto Buyer.spec'
 ```

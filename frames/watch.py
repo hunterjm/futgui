@@ -1,7 +1,8 @@
 import tkinter as tk
-from frames.base import Base
 import multiprocessing as mp
 import queue
+
+from frames.base import Base
 from PIL import ImageTk
 from core.playercard import create
 from core.watch import watch

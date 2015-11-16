@@ -20,7 +20,7 @@ class Login(Base):
         self.platform = tk.StringVar()
         self.emulate = tk.StringVar()
         self.debug = tk.IntVar()
-        self.data = {}
+        self.data = []
         self._keepalive = None
 
         # Search for settings
@@ -28,12 +28,15 @@ class Login(Base):
             with open(constants.LOGIN_FILE, 'r') as f:
                 self.data = json.load(f)
 
-            self.username.set(self.data['username'])
-            self.password.set(self.data['password'])
-            self.secret.set(self.data['secret'])
-            self.code.set(self.data['code'])
-            self.platform.set(self.data['platform'])
-            self.emulate.set(self.data['emulate'])
+            if not isinstance(self.data, list):
+                self.data = [self.data]
+
+            self.username.set(self.data[0]['username'])
+            self.password.set(self.data[0]['password'])
+            self.secret.set(self.data[0]['secret'])
+            self.code.set(self.data[0]['code'])
+            self.platform.set(self.data[0]['platform'])
+            self.emulate.set(self.data[0]['emulate'])
         except (FileNotFoundError, KeyError):
             self.platform.set('xbox')
             self.emulate.set('pc')
@@ -57,6 +60,7 @@ class Login(Base):
         userlbl = tk.Label(loginfr, text='Email:', font=('KnulBold', 16, 'bold'))
         userlbl.grid(column=0, row=1, sticky='e', padx=5, pady=5)
         userbox = tk.Entry(loginfr, textvariable=self.username)
+        userbox.bind('<KeyRelease>', self.search)
         userbox.grid(column=1, row=1, sticky='w', padx=5, pady=5)
         passlbl = tk.Label(loginfr, text='Password:', font=('KnulBold', 16, 'bold'))
         passlbl.grid(column=0, row=2, sticky='e', padx=5, pady=5)
@@ -85,6 +89,16 @@ class Login(Base):
         loginbtn = tk.Button(loginfr, text='Login', command=self.login)
         loginbtn.grid(column=0, row=8, columnspan=2, padx=5, pady=5)
 
+    def search(self, event=None):
+        i = self.find(self.data, 'username', self.username.get())
+        if i != -1:
+            self.loginlbl.config(text='\nLoaded saved login info for %s' % (self.username.get()))
+            self.password.set(self.data[i]['password'])
+            self.secret.set(self.data[i]['secret'])
+            self.code.set(self.data[i]['code'])
+            self.platform.set(self.data[i]['platform'])
+            self.emulate.set(self.data[i]['emulate'])
+
     def login(self, switchFrame=True):
 
         try:
@@ -96,14 +110,7 @@ class Login(Base):
                     self.controller.show_frame(Loading)
 
                     # Save settings
-                    self.data['username'] = self.username.get()
-                    self.data['password'] = self.password.get()
-                    self.data['secret'] = self.secret.get()
-                    self.data['code'] = self.code.get()
-                    self.data['platform'] = self.platform.get()
-                    self.data['emulate'] = self.emulate.get()
-                    with open(constants.LOGIN_FILE, 'w') as f:
-                        json.dump(self.data, f)
+                    self.save_settings()
 
                 # Convert emulate
                 if self.emulate.get() == 'android':
@@ -114,9 +121,10 @@ class Login(Base):
                     emulate=None
 
                 # Start API and update credits
-                cookies_file = self.username.get().split('@')[0]+'.txt'
+                cookies_file = constants.SETTINGS_DIR + self.username.get().split('@')[0]+'.txt'
                 self.controller.api = DelayedCore(self.username.get(), self.password.get(), self.secret.get(), self.platform.get(), self.code.get(), emulate, bool(self.debug.get()), cookies_file)
                 self.controller.status.set_credits(str(self.controller.api.credits))
+                self.controller.user = self.username.get()
                 self._keepalive = self.keepalive()
 
                 if switchFrame:
@@ -143,6 +151,32 @@ class Login(Base):
                 if self._keepalive is not None:
                     self.after_cancel(self._keepalive)
                     self._keepalive = None
+
+    def save_settings(self, *args):
+        try:
+            login = {
+                'username': self.username.get(),
+                'password': self.password.get(),
+                'secret': self.secret.get(),
+                'code': self.code.get(),
+                'platform': self.platform.get(),
+                'emulate': self.emulate.get()
+            }
+            i = self.find(self.data, 'username', self.username.get())
+            if i != -1:
+                self.data[i] = login
+            else:
+                self.data.append(login)
+            with open(constants.LOGIN_FILE, 'w') as f:
+                json.dump(self.data, f)
+        except:
+            pass
+
+    def find(self, lst, key, value):
+        for i, dic in enumerate(lst):
+            if dic[key] == value:
+                return i
+        return -1
 
     def keepalive(self):
         try:

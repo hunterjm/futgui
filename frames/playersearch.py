@@ -93,14 +93,14 @@ class PlayerSearch(Base):
         self._del_btn = tk.Button(self.tree, text='-', command=self._on_del_clicked)
 
         # Search for existing list
+        self._playerFile = {}
+        self._playerList = []
         try:
             with open(constants.PLAYERS_FILE, 'r') as f:
-                self._playerList = json.load(f)
+                self._playerFile = json.load(f)
+                self._playerList = []
         except:
-            self._playerList = []
-
-        for item in self._playerList:
-            self.add_player(item, write=False)
+            pass
 
         self.grid_columnconfigure(0, weight=1)
         self.grid_columnconfigure(1, weight=1)
@@ -162,8 +162,9 @@ class PlayerSearch(Base):
         except: pass
 
     def save_list(self):
+        self._playerFile[self.controller.user] = self._playerList
         with open(constants.PLAYERS_FILE, 'w') as f:
-                json.dump(self._playerList, f)
+                json.dump(self._playerFile, f)
 
     def _on_inplace_edit(self, event):
         col, item = self.tree.get_event_info()
@@ -193,7 +194,7 @@ class PlayerSearch(Base):
 
     def show_bid(self):
         if len(self._playerList) > 0:
-            self.controller.show_frame(Bid, playerList=self._playerList)
+            self.controller.show_frame(Bid, playerFile=self._playerFile, playerList=self._playerList)
 
     def show_watch(self):
         sel = self.tree.selection()
@@ -211,6 +212,22 @@ class PlayerSearch(Base):
         Base.active(self)
         if self.controller.api is None:
             self.controller.show_frame(Login)
+
+        # Backwards compatability
+        if isinstance(self._playerFile, list):
+            self._playerList = self._playerFile
+            self._playerFile = {
+                self.controller.user: self._playerList
+            }
+            self.save_list()
+
+        # Check if we have a list for this user
+        if not self.controller.user in self._playerFile:
+            self._playerFile[self.controller.user] = []
+
+        self._playerList = self._playerFile[self.controller.user]
+        for item in self._playerList:
+            self.add_player(item, write=False)
 
 
 from frames.login import Login
