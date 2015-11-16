@@ -20,7 +20,7 @@ class Login(Base):
         self.platform = tk.StringVar()
         self.emulate = tk.StringVar()
         self.debug = tk.IntVar()
-        self.data = {}
+        self.data = []
         self._keepalive = None
 
         # Search for settings

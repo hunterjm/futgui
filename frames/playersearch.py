@@ -93,13 +93,14 @@ class PlayerSearch(Base):
         self._del_btn = tk.Button(self.tree, text='-', command=self._on_del_clicked)
 
         # Search for existing list
+        self._playerFile = {}
+        self._playerList = []
         try:
             with open(constants.PLAYERS_FILE, 'r') as f:
                 self._playerFile = json.load(f)
                 self._playerList = []
         except:
-            self.playerFile = {}
-            self._playerList = []
+            pass
 
         self.grid_columnconfigure(0, weight=1)
         self.grid_columnconfigure(1, weight=1)
