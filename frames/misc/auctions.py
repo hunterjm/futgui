@@ -30,10 +30,11 @@ class Auctions():
         t.heading("current bid", text="current bid")
         t.heading("bin", text="BIN")
 
-        t.tag_configure('won', background='green', foreground='black')
+        t.tag_configure('won', foreground='#006400', background='grey')
         t.tag_configure('bid', foreground='#006400')
         t.tag_configure('war', foreground='#B77600')
-        t.tag_configure('lost', foreground='red', background='grey')
+        t.tag_configure('sold', foreground='#B77600', background='grey')
+        t.tag_configure('lost', foreground='#B70000', background='grey')
 
         # t.insert("",0,"dir1",text="directory 1")
         # t.insert("dir1","end","dir 1",text="file 1 1",values=("file 1 A","file 1 B"))
