@@ -38,7 +38,6 @@ def bid(q, api, playerList, settings, trades={}):
             continue
 
         try:
-
             # Grab all items from tradepile
             tradepile = api.tradepile()
             # How many of this item do we already have listed?
@@ -49,9 +48,6 @@ def bid(q, api, playerList, settings, trades={}):
 
                 # Look for any BIN less than the BIN price
                 for item in api.searchAuctions('player', defId=defId, max_buy=bidDetails[defId]['maxBid'], start=0, page_size=50):
-                    asset = api.cardInfo(item['resourceId'])
-                    card = PlayerCard(item, "%s %s" % (asset['Item']['FirstName'], asset['Item']['LastName']))
-
                     # player safety checks for every possible bid
                     if listed >= settings['maxPlayer']:
                         break
@@ -66,6 +62,9 @@ def bid(q, api, playerList, settings, trades={}):
 
                     # Buy!!!
                     if api.bid(item['tradeId'], item['buyNowPrice']):
+                        asset = api.cardInfo(item['resourceId'])
+                        card = PlayerCard(item, "%s %s" % (asset['Item']['FirstName'], asset['Item']['LastName']))
+
                         q.put((card, EventType.BIN))
                         q.put('%s    Card Purchased: BIN %d on %s %s\n' % (time.strftime('%Y-%m-%d %H:%M:%S'), item['buyNowPrice'], asset['Item']['FirstName'], asset['Item']['LastName']))
                         trades[item['tradeId']] = item['resourceId']
@@ -78,9 +77,6 @@ def bid(q, api, playerList, settings, trades={}):
                 bidon = 0
                 subtract = increment(bidDetails[defId]['maxBid'])
                 for item in api.searchAuctions('player', defId=defId, max_price=bidDetails[defId]['maxBid']-subtract, start=0, page_size=50):
-                    asset = api.cardInfo(item['resourceId'])
-                    card = PlayerCard(item, "%s %s" % (asset['Item']['FirstName'], asset['Item']['LastName']))
-
                     # player safety checks for every possible bid
                     # Let's look at last 5 minutes for now and bid on 5 players max
                     if item['expires'] > 600 or bidon >= 5 or listed >= settings['maxPlayer']:
@@ -102,6 +98,9 @@ def bid(q, api, playerList, settings, trades={}):
 
                     # Bid!!!
                     if api.bid(item['tradeId'], bid):
+                        asset = api.cardInfo(item['resourceId'])
+                        card = PlayerCard(item, "%s %s" % (asset['Item']['FirstName'], asset['Item']['LastName']))
+
                         card.currentBid = bid
                         q.put((card, EventType.NEWBID))
                         q.put('%s    New Bid: %d on %s %s\n' % (time.strftime('%Y-%m-%d %H:%M:%S'), bid, asset['Item']['FirstName'], asset['Item']['LastName']))
@@ -239,6 +238,9 @@ def bid(q, api, playerList, settings, trades={}):
                             sell = bidDetails[baseId]['sell']
                             binPrice = bidDetails[baseId]['binPrice']
                             if i['tradeState'] == 'closed':
+                                asset = api.cardInfo(item['resourceId'])
+                                card = PlayerCard(item, "%s %s" % (asset['Item']['FirstName'], asset['Item']['LastName']))
+                                q.put((card, EventType.SOLD))
                                 api.tradepileDelete(i['tradeId'])
                                 sold += 1
                             if i['tradeState'] == 'expired' and sell and binPrice:

@@ -77,14 +77,16 @@ class Bid(Base):
         options.grid(column=0, row=0, sticky='ns')
 
         auctions = tk.Frame(self)
-        auctions.grid(column=1, row=0, sticky='nsew')
-        auctions.configure(bg='orange')
 
         self.auctionStatus = Auctions(auctions)
-        self.auctionStatus.get_view().grid(column=0, row=0, sticky='nswe')
+        self.auctionStatus.get_view().grid(column=0, row=0, sticky='nsew', rowspan=2)
 
         self.logView = tk.Text(auctions, bg='#1d93ab', fg='#ffeb7e', bd=0)
-        self.logView.grid(column=0, row=1, sticky='ns')
+        self.logView.grid(column=0, row=2, sticky='nsew')
+
+        auctions.grid(column=1, row=0, sticky='nsew')
+        auctions.grid_rowconfigure(0, weight=3)
+        auctions.grid_rowconfigure(1, weight=1)
 
         self.grid_rowconfigure(0, weight=1)
         self.grid_columnconfigure(0, weight=0)
