@@ -9,6 +9,7 @@ class EventType(Enum):
     BIDWON = 5
     LOST = 6
     OUTBID = 7
+    UPDATE = 8
 
 class Auctions():
     cards = {}
@@ -52,10 +53,13 @@ class Auctions():
         if not card.cardid in self.cards:
             self.add_auction(card, timestamp, currbid, 'end', tag)
         else:
-            del self.cards[card.cardid]
-            index = self.view.index(card.cardid)
-            self.view.delete(card.cardid)
-            self.add_auction(card, timestamp, currbid, index, tag)
+            options = self.view.item(card.cardid)
+            options['values'] = (timestamp, card.startingBid,
+                                 currbid, card.buyNowPrice,
+                                 card.expires)
+            if tag:
+                options['tags'] = (tag,)
+            self.view.item(card.cardid, text=options['text'], values=options['values'], tags=options['tags'])
         self.view.see(card.cardid)
         self.view.selection_set([card.cardid])
 

@@ -189,6 +189,9 @@ def bid(q, api, playerList, settings, trades={}):
                         else:
                             q.put('%s    Bid Error: You are not allowed to bid on this trade\n' % (time.strftime('%Y-%m-%d %H:%M:%S')))
 
+                else:
+                    q.put((card, EventType.UPDATE))
+
             # buy now goes directly to unassigned now
             for item in api.unassigned():
                 baseId = str(api.baseId(item['resourceId']))
