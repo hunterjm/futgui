@@ -70,11 +70,11 @@ class Card():
         self.resourceId = item['resourceId']
         self.tradeId = item['tradeId']
         self.cardType = item['itemType']
-        self.buyNowPrice = item['buyNowPrice']
-        self.startingBid = item['startingBid']
-        self.currentBid = item['currentBid']
+        self.buyNowPrice = item['buyNowPrice'] if item['buyNowPrice'] is not None else item['lastSalePrice']
+        self.startingBid = item['startingBid'] if item['startingBid'] is not None else "BIN"
+        self.currentBid = item['currentBid'] if item['currentBid'] is not None else item['lastSalePrice']
         self.contract = item['contract']
-        self.expires = item['expires']
+        self.expires = item['expires'] if item['expires'] is not None else -1
 
 class PlayerCard(Card):
 
