@@ -82,12 +82,12 @@ class Login(Base):
         emulatelbl.grid(column=0, row=6, sticky='e', padx=5, pady=5)
         emulatesel = tk.OptionMenu(loginfr, self.emulate, 'pc', 'android', 'iOS')
         emulatesel.grid(column=1, row=6, sticky='w', padx=5, pady=5)
-        debugLbl = tk.Label(loginfr, text='Enable Debug:', font=('KnulBold', 16, 'bold'))
-        debugLbl.grid(column=0, row=7, sticky='e')
-        autoUpdateEntry = tk.Checkbutton(loginfr, variable=self.debug)
-        autoUpdateEntry.grid(column=1, row=7, sticky='w')
+        # debugLbl = tk.Label(loginfr, text='Enable Debug:', font=('KnulBold', 16, 'bold'))
+        # debugLbl.grid(column=0, row=7, sticky='e')
+        # debugCheckbox = tk.Checkbutton(loginfr, variable=self.debug)
+        # debugCheckbox.grid(column=1, row=7, sticky='w')
         loginbtn = tk.Button(loginfr, text='Login', command=self.login)
-        loginbtn.grid(column=0, row=8, columnspan=2, padx=5, pady=5)
+        loginbtn.grid(column=0, row=7, columnspan=2, padx=5, pady=5)
 
     def search(self, event=None):
         i = self.find(self.data, 'username', self.username.get())
@@ -122,7 +122,7 @@ class Login(Base):
 
                 # Start API and update credits
                 cookies_file = constants.SETTINGS_DIR + self.username.get().split('@')[0]+'.txt'
-                self.controller.api = DelayedCore(self.username.get(), self.password.get(), self.secret.get(), self.platform.get(), self.code.get(), emulate, bool(self.debug.get()), cookies_file)
+                self.controller.api = DelayedCore(self.username.get(), self.password.get(), self.secret.get(), self.platform.get(), self.code.get(), emulate, False, cookies_file)
                 self.controller.status.set_credits(str(self.controller.api.credits))
                 self.controller.user = self.username.get()
                 self._keepalive = self.keepalive()
