@@ -50,7 +50,7 @@ def bid(q, api, playerList, settings, trades={}):
                 for item in api.searchAuctions('player', defId=defId, max_buy=bidDetails[defId]['maxBid'], start=0, page_size=50):
 
                     # player safety checks for every possible bid
-                    if listed >= settings['maxPlayer']:
+                    if listed >= settings['maxPlayer'] or api.credits < settings['minCredits']:
                         break
 
                     # No Dups
@@ -78,7 +78,7 @@ def bid(q, api, playerList, settings, trades={}):
 
                     # player safety checks for every possible bid
                     # Let's look at last 5 minutes for now and bid on 5 players max
-                    if item['expires'] > 600 or bidon >= 5 or listed >= settings['maxPlayer']:
+                    if item['expires'] > 600 or bidon >= 5 or listed >= settings['maxPlayer'] or api.credits < settings['minCredits']:
                         break
 
                     # No Dups
