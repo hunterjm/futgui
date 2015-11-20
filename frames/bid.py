@@ -35,6 +35,7 @@ class Bid(Base):
         self.buy = tk.StringVar()
         self.sell = tk.StringVar()
         self.bin = tk.StringVar()
+        self.snipeOnly = tk.IntVar()
 
         self.settings = {
             'rpm': 20,
@@ -43,13 +44,14 @@ class Bid(Base):
             'autoUpdate': 0,
             'buy': 0.9,
             'sell': 1,
-            'bin': 1.25
+            'bin': 1.25,
+            'snipeOnly': 0
         }
 
         # Search for settings
         try:
             with open(constants.SETTINGS_FILE, 'r') as f:
-                self.settings = json.load(f)
+                self.settings.update(json.load(f))
         except FileNotFoundError:
             pass
 
@@ -61,6 +63,7 @@ class Bid(Base):
         self.buy.set(int(self.settings['buy']*100))
         self.sell.set(int(self.settings['sell']*100))
         self.bin.set(int(self.settings['bin']*100))
+        self.snipeOnly.set(self.settings['snipeOnly'])
 
         # Setup traces
         self.rpm.trace('w', self.save_settings)
@@ -70,6 +73,7 @@ class Bid(Base):
         self.buy.trace('w', self.save_settings)
         self.sell.trace('w', self.save_settings)
         self.bin.trace('w', self.save_settings)
+        self.snipeOnly.trace('w', self.save_settings)
 
         # Setup GUI
         options = tk.Frame(self)
@@ -119,8 +123,8 @@ class Bid(Base):
 
         autoUpdateLbl = tk.Label(form, text='Auto Update Pricing:')
         autoUpdateLbl.grid(column=0, row=3, sticky='e')
-        autoUpdateEntry = tk.Checkbutton(form, variable=self.autoUpdate)
-        autoUpdateEntry.grid(column=1, row=3, sticky='w')
+        autoUpdateCheckbox = tk.Checkbutton(form, variable=self.autoUpdate)
+        autoUpdateCheckbox.grid(column=1, row=3, sticky='w')
 
         autoBuyLbl = tk.Label(form, text='Auto Bid %:')
         autoBuyLbl.grid(column=0, row=4, sticky='e')
@@ -137,8 +141,13 @@ class Bid(Base):
         autoBINEntry = tk.Entry(form, width=8, textvariable=self.bin)
         autoBINEntry.grid(column=1, row=6, sticky='w')
 
+        snipeOnlyLbl = tk.Label(form, text='BIN Snipe Only:')
+        snipeOnlyLbl.grid(column=0, row=7, sticky='e')
+        snipeOnlyCheckbox = tk.Checkbutton(form, variable=self.snipeOnly)
+        snipeOnlyCheckbox.grid(column=1, row=7, sticky='w')
+
         self.bidbtn = tk.Button(form, text='Start Bidding', command=self.start)
-        self.bidbtn.grid(column=0, row=7, columnspan=2, padx=5, pady=5)
+        self.bidbtn.grid(column=0, row=8, columnspan=2, padx=5, pady=5)
 
         self.checkQueue()
         self.clearErrors()
@@ -369,7 +378,8 @@ class Bid(Base):
                 'autoUpdate': self.autoUpdate.get(),
                 'buy': int(self.buy.get())/100 if self.buy.get() else 0,
                 'sell': int(self.sell.get())/100 if self.sell.get() else 0,
-                'bin': int(self.bin.get())/100 if self.bin.get() else 0
+                'bin': int(self.bin.get())/100 if self.bin.get() else 0,
+                'snipeOnly': self.snipeOnly.get()
             }
             with open(constants.SETTINGS_FILE, 'w') as f:
                     json.dump(self.settings, f)

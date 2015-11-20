@@ -72,110 +72,112 @@ def bid(q, api, playerList, settings, trades={}):
 
 
                 # Search first 50 items in my price range to bid on within 5 minutes
-                bidon = 0
-                subtract = increment(bidDetails[defId]['maxBid'])
-                for item in api.searchAuctions('player', defId=defId, max_price=bidDetails[defId]['maxBid']-subtract, start=0, page_size=50):
+                if not settings['snipeOnly']:
+                    bidon = 0
+                    subtract = increment(bidDetails[defId]['maxBid'])
+                    for item in api.searchAuctions('player', defId=defId, max_price=bidDetails[defId]['maxBid']-subtract, start=0, page_size=50):
 
-                    # player safety checks for every possible bid
-                    # Let's look at last 5 minutes for now and bid on 5 players max
-                    if item['expires'] > 600 or bidon >= 5 or listed >= settings['maxPlayer'] or api.credits < settings['minCredits']:
-                        break
+                        # player safety checks for every possible bid
+                        # Let's look at last 5 minutes for now and bid on 5 players max
+                        if item['expires'] > 600 or bidon >= 5 or listed >= settings['maxPlayer'] or api.credits < settings['minCredits']:
+                            break
 
-                    # No Dups
-                    if item['tradeId'] in trades:
-                        continue
+                        # No Dups
+                        if item['tradeId'] in trades:
+                            continue
 
-                    # Must have contract
-                    if item['contract'] < 1:
-                        continue
+                        # Must have contract
+                        if item['contract'] < 1:
+                            continue
 
-                    # Set my initial bid
-                    if item['currentBid']:
-                        bid = item['currentBid'] + increment(item['currentBid'])
-                    else:
-                        bid = item['startingBid']
-
-                    # Bid!!!
-                    if api.bid(item['tradeId'], bid):
-                        asset = api.cardInfo(item['resourceId'])
-                        q.put('%s    New Bid: %d on %s %s\n' % (time.strftime('%Y-%m-%d %H:%M:%S'), bid, asset['Item']['FirstName'], asset['Item']['LastName']))
-                        trades[item['tradeId']] = item['resourceId']
-                        bidon += 1
-                    else:
-                        q.put('%s    Bid Error: You are not allowed to bid on this trade\n' % (time.strftime('%Y-%m-%d %H:%M:%S')))
-
-
-            # Update watched items
-            # q.put('%s    Updating watched items...\n' % (time.strftime('%Y-%m-%d %H:%M:%S')))
-            for item in api.watchlist():
-                baseId = str(api.baseId(item['resourceId']))
-                if not baseId in bidDetails:
-                    continue
-                maxBid = bidDetails[baseId]['maxBid']
-                sell = bidDetails[baseId]['sell']
-                binPrice = bidDetails[baseId]['binPrice']
-                # How many of this item do we already have listed?
-                listed = sum([str(api.baseId(item['resourceId'])) == baseId for item in tradepile])
-
-                # Break if we don't have enough credits
-                if api.credits < settings['minCredits']:
-                    break
-
-                tradeId = item['tradeId']
-                if tradeId not in trades:
-                    break
-
-                asset = api.cardInfo(trades[tradeId])
-
-                # Handle Expired Items
-                if item['expires'] == -1:
-
-                    if (item['bidState'] == 'highest' or (item['tradeState'] == 'closed' and item['bidState'] == 'buyNow')):
-
-                        # We won! Send to Pile!
-                        q.put('%s    Auction Won: %d on %s %s\n' % (time.strftime('%Y-%m-%d %H:%M:%S'), item['currentBid'], asset['Item']['FirstName'], asset['Item']['LastName']))
-                        if api.sendToTradepile(tradeId, item['id'], safe=True):
-                            # List on market
-                            if api.sell(item['id'], sell, binPrice):
-                                auctionsWon += 1
-                                listed += 1
-                                q.put('%s    Item Listed: %s %s for %d (%d BIN)\n' % (time.strftime('%Y-%m-%d %H:%M:%S'), asset['Item']['FirstName'], asset['Item']['LastName'], sell, binPrice))
-                            pileFull = False
-
+                        # Set my initial bid
+                        if item['currentBid']:
+                            bid = item['currentBid'] + increment(item['currentBid'])
                         else:
-                            pileFull = True
+                            bid = item['startingBid']
 
-                    else:
-
-                        if api.watchlistDelete(tradeId):
-
-                            if item['currentBid'] < maxBid:
-                                q.put('%s    TOO SLOW: %s %s went for %d\n' % (time.strftime('%Y-%m-%d %H:%M:%S'), asset['Item']['FirstName'], asset['Item']['LastName'], item['currentBid']))
-                            else:
-                                q.put('%s    Auction Lost: %s %s went for %d\n' % (time.strftime('%Y-%m-%d %H:%M:%S'), asset['Item']['FirstName'], asset['Item']['LastName'], item['currentBid']))
-
-
-                    # No need to keep track of expired bids
-                    del trades[tradeId]
-
-                elif item['bidState'] != 'highest':
-
-                    # Continue if we already have too many listed
-                    if listed >= settings['maxPlayer']:
-                        continue
-
-                    # We were outbid
-                    newBid = item['currentBid'] + increment(item['currentBid'])
-                    if newBid > maxBid:
-                        if api.watchlistDelete(tradeId):
-                            q.put('%s    Outbid: Won\'t pay %d for %s %s\n' % (time.strftime('%Y-%m-%d %H:%M:%S'), newBid, asset['Item']['FirstName'], asset['Item']['LastName']))
-                            del trades[tradeId]
-
-                    else:
-                        if api.bid(tradeId, newBid):
-                            q.put('%s    Bidding War: %d on %s %s\n' % (time.strftime('%Y-%m-%d %H:%M:%S'), newBid, asset['Item']['FirstName'], asset['Item']['LastName']))
+                        # Bid!!!
+                        if api.bid(item['tradeId'], bid):
+                            asset = api.cardInfo(item['resourceId'])
+                            q.put('%s    New Bid: %d on %s %s\n' % (time.strftime('%Y-%m-%d %H:%M:%S'), bid, asset['Item']['FirstName'], asset['Item']['LastName']))
+                            trades[item['tradeId']] = item['resourceId']
+                            bidon += 1
                         else:
                             q.put('%s    Bid Error: You are not allowed to bid on this trade\n' % (time.strftime('%Y-%m-%d %H:%M:%S')))
+
+
+            if not settings['snipeOnly']:
+                # Update watched items
+                # q.put('%s    Updating watched items...\n' % (time.strftime('%Y-%m-%d %H:%M:%S')))
+                for item in api.watchlist():
+                    baseId = str(api.baseId(item['resourceId']))
+                    if not baseId in bidDetails:
+                        continue
+                    maxBid = bidDetails[baseId]['maxBid']
+                    sell = bidDetails[baseId]['sell']
+                    binPrice = bidDetails[baseId]['binPrice']
+                    # How many of this item do we already have listed?
+                    listed = sum([str(api.baseId(item['resourceId'])) == baseId for item in tradepile])
+
+                    # Break if we don't have enough credits
+                    if api.credits < settings['minCredits']:
+                        break
+
+                    tradeId = item['tradeId']
+                    if tradeId not in trades:
+                        break
+
+                    asset = api.cardInfo(trades[tradeId])
+
+                    # Handle Expired Items
+                    if item['expires'] == -1:
+
+                        if (item['bidState'] == 'highest' or (item['tradeState'] == 'closed' and item['bidState'] == 'buyNow')):
+
+                            # We won! Send to Pile!
+                            q.put('%s    Auction Won: %d on %s %s\n' % (time.strftime('%Y-%m-%d %H:%M:%S'), item['currentBid'], asset['Item']['FirstName'], asset['Item']['LastName']))
+                            if api.sendToTradepile(tradeId, item['id'], safe=True):
+                                # List on market
+                                if api.sell(item['id'], sell, binPrice):
+                                    auctionsWon += 1
+                                    listed += 1
+                                    q.put('%s    Item Listed: %s %s for %d (%d BIN)\n' % (time.strftime('%Y-%m-%d %H:%M:%S'), asset['Item']['FirstName'], asset['Item']['LastName'], sell, binPrice))
+                                pileFull = False
+
+                            else:
+                                pileFull = True
+
+                        else:
+
+                            if api.watchlistDelete(tradeId):
+
+                                if item['currentBid'] < maxBid:
+                                    q.put('%s    TOO SLOW: %s %s went for %d\n' % (time.strftime('%Y-%m-%d %H:%M:%S'), asset['Item']['FirstName'], asset['Item']['LastName'], item['currentBid']))
+                                else:
+                                    q.put('%s    Auction Lost: %s %s went for %d\n' % (time.strftime('%Y-%m-%d %H:%M:%S'), asset['Item']['FirstName'], asset['Item']['LastName'], item['currentBid']))
+
+
+                        # No need to keep track of expired bids
+                        del trades[tradeId]
+
+                    elif item['bidState'] != 'highest':
+
+                        # Continue if we already have too many listed
+                        if listed >= settings['maxPlayer']:
+                            continue
+
+                        # We were outbid
+                        newBid = item['currentBid'] + increment(item['currentBid'])
+                        if newBid > maxBid:
+                            if api.watchlistDelete(tradeId):
+                                q.put('%s    Outbid: Won\'t pay %d for %s %s\n' % (time.strftime('%Y-%m-%d %H:%M:%S'), newBid, asset['Item']['FirstName'], asset['Item']['LastName']))
+                                del trades[tradeId]
+
+                        else:
+                            if api.bid(tradeId, newBid):
+                                q.put('%s    Bidding War: %d on %s %s\n' % (time.strftime('%Y-%m-%d %H:%M:%S'), newBid, asset['Item']['FirstName'], asset['Item']['LastName']))
+                            else:
+                                q.put('%s    Bid Error: You are not allowed to bid on this trade\n' % (time.strftime('%Y-%m-%d %H:%M:%S')))
 
             # buy now goes directly to unassigned now
             for item in api.unassigned():
