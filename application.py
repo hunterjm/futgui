@@ -11,6 +11,7 @@ from frames.login import Login
 from frames.bid import Bid
 from frames.watch import Watch
 
+
 class Application(tk.Frame):
     def __init__(self, master):
         if not self.prepare_environment():

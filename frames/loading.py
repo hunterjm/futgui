@@ -3,6 +3,7 @@ import tkinter as tk
 from frames.base import Base
 from PIL import Image, ImageTk
 
+
 class Loading(Base):
     def __init__(self, master, controller):
         Base.__init__(self, master, controller)

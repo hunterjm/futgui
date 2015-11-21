@@ -1,5 +1,6 @@
 import tkinter as tk
 
+
 class MenuBar(tk.Menu):
     def __init__(self, parent):
         tk.Menu.__init__(self, parent)

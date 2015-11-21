@@ -6,3 +6,4 @@ fut.log
 !requirements.txt
 .eggs
 .idea
+futgui.egg-info/

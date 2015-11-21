@@ -2,6 +2,7 @@ import time
 
 from operator import itemgetter
 
+
 def increment(bid):
     if bid < 1000:
         return 50
@@ -14,8 +15,10 @@ def increment(bid):
     else:
         return 1000
 
+
 def roundBid(bid):
     return int(increment(bid) * round(float(bid)/increment(bid)))
+
 
 def bid(q, api, playerList, settings, trades={}):
     pileFull = False
@@ -29,7 +32,7 @@ def bid(q, api, playerList, settings, trades={}):
             'maxBid': item['buy'],
             'sell': item['sell'],
             'binPrice': item['bin']
-            }
+        }
 
     for defId in bidDetails.keys():
 
@@ -70,7 +73,6 @@ def bid(q, api, playerList, settings, trades={}):
                     else:
                         q.put('%s    Bid Error: You are not allowed to bid on this trade\n' % (time.strftime('%Y-%m-%d %H:%M:%S')))
 
-
                 # Search first 50 items in my price range to bid on within 5 minutes
                 if not settings['snipeOnly']:
                     bidon = 0
@@ -105,13 +107,12 @@ def bid(q, api, playerList, settings, trades={}):
                         else:
                             q.put('%s    Bid Error: You are not allowed to bid on this trade\n' % (time.strftime('%Y-%m-%d %H:%M:%S')))
 
-
             if not settings['snipeOnly']:
                 # Update watched items
                 # q.put('%s    Updating watched items...\n' % (time.strftime('%Y-%m-%d %H:%M:%S')))
                 for item in api.watchlist():
                     baseId = str(api.baseId(item['resourceId']))
-                    if not baseId in bidDetails:
+                    if baseId not in bidDetails:
                         continue
                     maxBid = bidDetails[baseId]['maxBid']
                     sell = bidDetails[baseId]['sell']
@@ -156,7 +157,6 @@ def bid(q, api, playerList, settings, trades={}):
                                 else:
                                     q.put('%s    Auction Lost: %s %s went for %d\n' % (time.strftime('%Y-%m-%d %H:%M:%S'), asset['Item']['FirstName'], asset['Item']['LastName'], item['currentBid']))
 
-
                         # No need to keep track of expired bids
                         del trades[tradeId]
 
@@ -182,7 +182,7 @@ def bid(q, api, playerList, settings, trades={}):
             # buy now goes directly to unassigned now
             for item in api.unassigned():
                 baseId = str(api.baseId(item['resourceId']))
-                if not baseId in bidDetails:
+                if baseId not in bidDetails:
                     continue
                 maxBid = bidDetails[baseId]['maxBid']
                 sell = bidDetails[baseId]['sell']
@@ -206,7 +206,6 @@ def bid(q, api, playerList, settings, trades={}):
                 # No need to keep track of expired bids
                 if tradeId > 0:
                     del trades[tradeId]
-
 
             try:
                 # Clean up Trade Pile & relist items
