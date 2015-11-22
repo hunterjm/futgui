@@ -1,5 +1,6 @@
 import tkinter as tk
-import json, requests
+import json
+import requests
 import multiprocessing as mp
 import core.constants as constants
 
@@ -8,6 +9,7 @@ from os.path import expanduser
 from frames.base import Base
 from PIL import Image, ImageTk
 from core.playercard import create
+
 
 class PlayerSearch(Base):
     def __init__(self, master, controller):
@@ -22,7 +24,7 @@ class PlayerSearch(Base):
         search.bind('<Return>', self.lookup)
         search.grid(column=0, row=0, columnspan=2, sticky='we')
 
-        #preload cards and info
+        # preload cards and info
         self.cards = {
             'group0': Image.open('images/cards/group0.png'),
             'group1': Image.open('images/cards/group1.png'),
@@ -33,7 +35,7 @@ class PlayerSearch(Base):
 
         self.cardLabels = None
 
-        #create scrolling frame
+        # create scrolling frame
         # create a canvas object and a vertical scrollbar for scrolling it
         hscrollbar = tk.Scrollbar(self, orient=tk.HORIZONTAL)
         hscrollbar.grid(column=0, row=2, columnspan=2, sticky='we')
@@ -129,7 +131,7 @@ class PlayerSearch(Base):
         results = [p.apply_async(create, (player,)) for player in response['items']]
         self.master.config(cursor='wait')
         self.master.update()
-        i = 0;
+        i = 0
         for r in results:
             self.load_player(r.get(), response['items'][i])
             i += 1
@@ -149,7 +151,7 @@ class PlayerSearch(Base):
             'buy': 0,
             'sell': 0,
             'bin': 0
-            }))
+        }))
 
     def add_player(self, item, write=True):
         player = item['player']
@@ -159,7 +161,8 @@ class PlayerSearch(Base):
             if write:
                 self._playerList.append(item)
                 self.save_list()
-        except: pass
+        except:
+            pass
 
     def save_list(self):
         self._playerFile[self.controller.user] = self._playerList
@@ -222,7 +225,7 @@ class PlayerSearch(Base):
             self.save_list()
 
         # Check if we have a list for this user
-        if not self.controller.user in self._playerFile:
+        if self.controller.user not in self._playerFile:
             self._playerFile[self.controller.user] = []
 
         self._playerList = self._playerFile[self.controller.user]

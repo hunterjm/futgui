@@ -5,6 +5,7 @@ from PIL import ImageTk, Image
 
 locale.setlocale(locale.LC_ALL, '')
 
+
 class StatusBar(tk.Frame):
 
     def __init__(self, master):

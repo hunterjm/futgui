@@ -1,5 +1,6 @@
 import math
 
+
 def watch(q, api, defIds, length=1200):
 
     api.resetSession()
@@ -12,7 +13,7 @@ def watch(q, api, defIds, length=1200):
         for defId in defIds:
             trades[defId] = {}
 
-            for i in range(0,5):
+            for i in range(0, 5):
                 stop = False
                 # Look for any trades for this card and store off the tradeIds
                 for item in api.searchAuctions('player', defId=defId, start=i*50+1, page_size=50):
@@ -47,15 +48,15 @@ def watch(q, api, defIds, length=1200):
                 mean = 0
                 minUnsoldList = 0
 
-                activeTrades = {k:v for (k,v) in trades[defId].items() if v['currentBid'] > 0}
+                activeTrades = {k: v for (k, v) in trades[defId].items() if v['currentBid'] > 0}
                 if len(activeTrades):
-                    activeBids = [v['currentBid'] for (k,v) in activeTrades.items()]
+                    activeBids = [v['currentBid'] for (k, v) in activeTrades.items()]
                     activeBids.sort()
                     lowest = min(activeTrades[k]['currentBid'] for k in activeTrades)
                     median = activeBids[math.floor((len(activeBids)-1)/2)]
                     mean = int(sum(activeTrades[k]['currentBid'] for k in activeTrades) / len(activeTrades))
 
-                expiredNotSold = {k:v for (k,v) in trades[defId].items() if v['currentBid'] == 0 and v['expires'] == -1}
+                expiredNotSold = {k: v for (k, v) in trades[defId].items() if v['currentBid'] == 0 and v['expires'] == -1}
                 if len(expiredNotSold):
                     minUnsoldList = min(expiredNotSold[k]['startingBid'] for k in expiredNotSold)
 
@@ -68,7 +69,7 @@ def watch(q, api, defIds, length=1200):
                     'median': median,
                     'mean': mean,
                     'minUnsoldList': minUnsoldList
-                    })
+                })
     except (FutError, RequestException) as e:
         q.put(e)
 
