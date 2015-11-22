@@ -5,6 +5,7 @@ from time import time, sleep
 
 cookies_file = 'cookies.txt'
 
+
 class DelayedCore(fut.Core):
     def __init__(self, email, passwd, secret_answer, platform='pc', code=None, emulate=None, debug=False, cookies=cookies_file):
         # Set initial delay

@@ -3,7 +3,8 @@ import tkinter.ttk as ttk
 import multiprocessing as mp
 import queue
 import time
-import json, requests
+import json
+import requests
 import core.constants as constants
 
 from frames.base import Base
@@ -11,6 +12,7 @@ from frames.misc.auctions import Auctions, Card, EventType
 from core.bid import bid, roundBid
 from core.watch import watch
 from os.path import expanduser
+
 
 class Bid(Base):
     def __init__(self, master, controller):
@@ -53,7 +55,7 @@ class Bid(Base):
         try:
             with open(constants.SETTINGS_FILE, 'r') as f:
                 self.settings.update(json.load(f))
-        except FileNotFoundError:
+        except OSError.FileNotFoundError:
             pass
 
         # Set initial values
@@ -187,7 +189,7 @@ class Bid(Base):
                 self.args['playerList'],
                 self.settings,
                 trades
-                ))
+            ))
             self.p.start()
             self.controller.status.set_credits(self.controller.api.credits)
             self.after(5000, self.bid)
@@ -260,7 +262,7 @@ class Bid(Base):
             self.controller.api,
             [item['player']['id'] for item in self.args['playerList']],
             900
-            ))
+        ))
         self.p.start()
         self._lastUpdate = time.time()
         self.after(900000, self.bid)
@@ -281,16 +283,15 @@ class Bid(Base):
         self.updateLog('%s    Setting %s to %d/%d/%d (based on %d)...\n' % (time.strftime('%Y-%m-%d %H:%M:%S'), displayName, item['buy'], item['sell'], item['bin'], sell))
         return item
 
-
     def lookup_bin(self, player):
-        #lookup BIN
+        # lookup BIN
         r = {'xbox': 0, 'ps4': 0}
         displayName = player['commonName'] if player['commonName'] is not '' else player['lastName']
         response = requests.get('http://www.futbin.com/pages/16/players/filter_processing.php', params={
             'start': 0,
             'length': 30,
             'search[value]': displayName
-            }).json()
+        }).json()
         for p in response['data']:
             if p[len(p)-2] == player['id']:
                 r = {'xbox': int(p[8]), 'ps4': int(p[6])}
@@ -382,7 +383,7 @@ class Bid(Base):
         self.after(900000, self.clearErrors)
 
     def updateLog(self, msg):
-        self.logView.insert('end',msg)
+        self.logView.insert('end', msg)
         self.logView.see(tk.END)
         self.update_idletasks()
 
@@ -425,7 +426,8 @@ class Bid(Base):
             displayName = item['player']['commonName'] if item['player']['commonName'] is not '' else item['player']['lastName']
             try:
                 self.tree.insert('', 'end', item['player']['id'], text=displayName, values=(item['buy'], item['sell'], item['bin']))
-            except: pass
+            except:
+                pass
 
         self._lastUpdate = 0
         self._updatedItems = []

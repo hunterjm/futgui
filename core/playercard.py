@@ -1,7 +1,9 @@
-import json, requests
+import json
+import requests
 
 from PIL import Image, ImageDraw, ImageFont
 from io import BytesIO
+
 
 def create(player, cards=None, cardinfo=None):
 
@@ -28,11 +30,11 @@ def create(player, cards=None, cardinfo=None):
         cardinfo[player['color']]['position'],
         cardinfo[player['color']]['width'],
         cardinfo[player['color']]['position'] + cardinfo[player['color']]['height']
-        ))
-    card = Image.new("RGB", cardbg.size, (29,147,171))
+    ))
+    card = Image.new("RGB", cardbg.size, (29, 147, 171))
     card.paste(cardbg, cardbg)
 
-    #headshot image
+    # headshot image
     if player['specialImages']['largeTOTWImgUrl'] is not None:
         r = requests.get(player['specialImages']['largeTOTWImgUrl'])
     else:
@@ -42,16 +44,16 @@ def create(player, cards=None, cardinfo=None):
 
     # Rating
     renderedSize = _font25.getsize(str(player['rating']))
-    rating = Image.new('RGBA', renderedSize, (255,255,255,0))
+    rating = Image.new('RGBA', renderedSize, (255, 255, 255, 0))
     d = ImageDraw.Draw(rating)
-    d.text((0,0), str(player['rating']), font=_font25, fill=(54,33,27,255))
+    d.text((0, 0), str(player['rating']), font=_font25, fill=(54, 33, 27, 255))
     card.paste(rating, (45, 20), rating)
 
     # Position
     renderedSize = _font25.getsize(str(player['position']))
-    position = Image.new('RGBA', renderedSize, (255,255,255,0))
+    position = Image.new('RGBA', renderedSize, (255, 255, 255, 0))
     d = ImageDraw.Draw(position)
-    d.text((0,0), str(player['position']), font=_font16, fill=(54,33,27,255))
+    d.text((0, 0), str(player['position']), font=_font16, fill=(54, 33, 27, 255))
     card.paste(position, (45, 50), position)
 
     # club image
@@ -65,50 +67,50 @@ def create(player, cards=None, cardinfo=None):
     card.paste(nation, (38, 123), nation)
 
     if player['color'][0:3] == 'tot':
-        fillColor = (255,234,128,255)
+        fillColor = (255, 234, 128, 255)
     else:
-        fillColor = (54,33,27,255)
+        fillColor = (54, 33, 27, 255)
 
     # player name
     displayName = player['commonName'] if player['commonName'] is not '' else player['lastName']
     renderedSize = _font16.getsize(displayName)
-    name = Image.new('RGBA', renderedSize, (255,255,255,0))
+    name = Image.new('RGBA', renderedSize, (255, 255, 255, 0))
     d = ImageDraw.Draw(name)
-    d.text((0,0), displayName, font=_font16, fill=fillColor)
+    d.text((0, 0), displayName, font=_font16, fill=fillColor)
     card.paste(name, (int((card.size[0]-renderedSize[0])/2), 162), name)
 
     # attributes
     pos = [
-        { "x": 65, "y": 188 },
-        { "x": 65, "y": 213 },
-        { "x": 65, "y": 238 },
-        { "x": 130, "y": 188 },
-        { "x": 130, "y": 213 },
-        { "x": 130, "y": 238 },
+        {"x": 65, "y": 188},
+        {"x": 65, "y": 213},
+        {"x": 65, "y": 238},
+        {"x": 130, "y": 188},
+        {"x": 130, "y": 213},
+        {"x": 130, "y": 238},
     ]
-    count = 0;
+    count = 0
     for attr in player['attributes']:
 
         value = str(attr['value'])
         renderedSize = _font16.getsize(value)
-        img = Image.new('RGBA', renderedSize, (255,255,255,0))
+        img = Image.new('RGBA', renderedSize, (255, 255, 255, 0))
         d = ImageDraw.Draw(img)
-        d.text((0,0), value, font=_font16, fill=fillColor)
+        d.text((0, 0), value, font=_font16, fill=fillColor)
         card.paste(img, (pos[count]['x']-25, pos[count]['y']), img)
 
         name = attr['name'][-3:]
         renderedSize = _font16r.getsize(name)
-        img = Image.new('RGBA', renderedSize, (255,255,255,0))
+        img = Image.new('RGBA', renderedSize, (255, 255, 255, 0))
         d = ImageDraw.Draw(img)
-        d.text((0,0), name, font=_font16r, fill=fillColor)
+        d.text((0, 0), name, font=_font16r, fill=fillColor)
         card.paste(img, (pos[count]['x'], pos[count]['y']), img)
-        count+=1
+        count += 1
 
     # League
     renderedSize = _font20b.getsize(player['league']['abbrName'])
-    league = Image.new('RGBA', renderedSize, (255,255,255,0))
+    league = Image.new('RGBA', renderedSize, (255, 255, 255, 0))
     d = ImageDraw.Draw(league)
-    d.text((0,0), player['league']['abbrName'], font=_font20b, fill=fillColor)
+    d.text((0, 0), player['league']['abbrName'], font=_font20b, fill=fillColor)
     card.paste(league, (int((card.size[0]-renderedSize[0])/2), 260), league)
 
     return card

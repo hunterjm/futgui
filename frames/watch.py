@@ -7,6 +7,7 @@ from PIL import ImageTk
 from core.playercard import create
 from core.watch import watch
 
+
 class Watch(Base):
     def __init__(self, master, controller):
         Base.__init__(self, master, controller)
@@ -70,7 +71,7 @@ class Watch(Base):
             self.q,
             self.controller.api,
             int(self.args['player']['id'])
-            ))
+        ))
         self.p.start()
 
     def checkQueue(self):

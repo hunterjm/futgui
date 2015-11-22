@@ -12,6 +12,7 @@ from frames.bid import Bid
 from frames.watch import Watch
 from frames.test import Test
 
+
 class Application(tk.Frame):
     def __init__(self, master):
         if not self.prepare_environment():

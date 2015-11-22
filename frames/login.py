@@ -6,6 +6,7 @@ from frames.base import Base
 from api.delayedcore import DelayedCore
 from os.path import expanduser
 
+
 class Login(Base):
     def __init__(self, master, controller):
         #init Base
@@ -37,7 +38,7 @@ class Login(Base):
             self.code.set(self.data[0]['code'])
             self.platform.set(self.data[0]['platform'])
             self.emulate.set(self.data[0]['emulate'])
-        except (FileNotFoundError, KeyError):
+        except (OSError.FileNotFoundError, KeyError):
             self.platform.set('xbox')
             self.emulate.set('pc')
 
@@ -49,7 +50,7 @@ class Login(Base):
             text='\nWe need to collect your login information in order to connect to the FIFA servers.  This information will be saved on your computer for future use.',
             anchor='w', justify='left', wraplength=500,
             fg='#fff', bg='#1d93ab', font=('KnulBold', 16)
-            )
+        )
         # self.loginlbl.grid(column=0, row=0)
         self.loginlbl.pack()
         loginfr = tk.Frame(mainframe)
@@ -114,11 +115,11 @@ class Login(Base):
 
                 # Convert emulate
                 if self.emulate.get() == 'android':
-                    emulate='and'
+                    emulate = 'and'
                 elif self.emulate.get() == 'iOS':
-                    emulate='ios'
+                    emulate = 'ios'
                 else:
-                    emulate=None
+                    emulate = None
 
                 # Start API and update credits
                 cookies_file = constants.SETTINGS_DIR + self.username.get().split('@')[0]+'.txt'
