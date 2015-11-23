@@ -71,6 +71,7 @@ class PlayerSearch(Base):
 
         # Add a treeview to display selected players
         self.tree = EditableTreeview(self, columns=('position', 'rating', 'buy', 'sell', 'bin', 'actions'), selectmode='browse', height=8)
+        self.tree.heading('#0', text='Name', anchor='w')
         self.tree.column('position', width=100, anchor='center')
         self.tree.heading('position', text='Position')
         self.tree.column('rating', width=100, anchor='center')

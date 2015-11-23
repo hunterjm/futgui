@@ -66,7 +66,8 @@ def bid(q, api, playerList, settings, trades={}):
                     # Buy!!!
                     if api.bid(item['tradeId'], item['buyNowPrice']):
                         asset = api.cardInfo(item['resourceId'])
-                        card = PlayerCard(item, "%s %s" % (asset['Item']['FirstName'], asset['Item']['LastName']))
+                        displayName = asset['Item']['CommonName'] if asset['Item']['CommonName'] else asset['Item']['LastName']
+                        card = PlayerCard(item, displayName)
 
                         q.put((card, EventType.BIN))
                         q.put('%s    Card Purchased: BIN %d on %s %s\n' % (time.strftime('%Y-%m-%d %H:%M:%S'), item['buyNowPrice'], asset['Item']['FirstName'], asset['Item']['LastName']))
@@ -102,7 +103,8 @@ def bid(q, api, playerList, settings, trades={}):
                         # Bid!!!
                         if api.bid(item['tradeId'], bid):
                             asset = api.cardInfo(item['resourceId'])
-                            card = PlayerCard(item, "%s %s" % (asset['Item']['FirstName'], asset['Item']['LastName']))
+                            displayName = asset['Item']['CommonName'] if asset['Item']['CommonName'] else asset['Item']['LastName']
+                            card = PlayerCard(item, displayName)
 
                             card.currentBid = bid
                             q.put((card, EventType.NEWBID))
@@ -134,7 +136,8 @@ def bid(q, api, playerList, settings, trades={}):
                         break
 
                     asset = api.cardInfo(trades[tradeId])
-                    card = PlayerCard(item, "%s %s" % (asset['Item']['FirstName'], asset['Item']['LastName']))
+                    displayName = asset['Item']['CommonName'] if asset['Item']['CommonName'] else asset['Item']['LastName']
+                    card = PlayerCard(item, displayName)
 
                     # Handle Expired Items
                     if item['expires'] == -1:
@@ -205,7 +208,8 @@ def bid(q, api, playerList, settings, trades={}):
 
                 tradeId = item['tradeId'] if item['tradeId'] is not None else -1
                 asset = api.cardInfo(item['resourceId'])
-                card = PlayerCard(item, "%s %s" % (asset['Item']['FirstName'], asset['Item']['LastName']))
+                displayName = asset['Item']['CommonName'] if asset['Item']['CommonName'] else asset['Item']['LastName']
+                card = PlayerCard(item, displayName)
 
                 # We won! Send to Pile!
                 q.put((card, EventType.BIDWON))
@@ -243,7 +247,8 @@ def bid(q, api, playerList, settings, trades={}):
                             binPrice = bidDetails[baseId]['binPrice']
                             if i['tradeState'] == 'closed':
                                 asset = api.cardInfo(item['resourceId'])
-                                card = PlayerCard(item, "%s %s" % (asset['Item']['FirstName'], asset['Item']['LastName']))
+                                displayName = asset['Item']['CommonName'] if asset['Item']['CommonName'] else asset['Item']['LastName']
+                                card = PlayerCard(item, displayName)
                                 q.put((card, EventType.SOLD))
                                 api.tradepileDelete(i['tradeId'])
                                 sold += 1

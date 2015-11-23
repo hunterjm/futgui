@@ -10,7 +10,6 @@ from frames.playersearch import PlayerSearch
 from frames.login import Login
 from frames.bid import Bid
 from frames.watch import Watch
-from frames.test import Test
 
 
 class Application(tk.Frame):

@@ -102,6 +102,7 @@ class Bid(Base):
         back.grid(column=0, row=0, sticky='we')
 
         self.tree = ttk.Treeview(options, columns=('buy', 'sell', 'bin'), selectmode='browse')
+        self.tree.heading('#0', text='Name', anchor='w')
         self.tree.column('buy', width=50, anchor='center')
         self.tree.heading('buy', text='Max Bid')
         self.tree.column('sell', width=50, anchor='center')
