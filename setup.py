@@ -8,7 +8,7 @@ Usage:
 from setuptools import setup
 
 APP = ['FIFA 16 Auto Buyer.py']
-DATA_FILES = ['images','fonts']
+DATA_FILES = ['images', 'fonts']
 OPTIONS = {'argv_emulation': True, 'iconfile': './logo.icns'}
 
 setup(

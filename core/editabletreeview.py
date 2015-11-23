@@ -37,16 +37,14 @@ class EditableTreeview(ttk.Treeview):
         self._inplace_vars = {}
 
         self.bind('<<TreeviewSelect>>', self.__check_focus)
-        #Wheel events?
+        # Wheel events?
         self.bind('<4>', lambda e: self.after_idle(self.__updateWnds))
         self.bind('<5>', lambda e: self.after_idle(self.__updateWnds))
-        #self.bind('<ButtonRelease-1>', self.__check_focus)
+        # self.bind('<ButtonRelease-1>', self.__check_focus)
         self.bind('<KeyRelease>', self.__check_focus)
         self.bind('<Home>', functools.partial(self.__on_key_press, 'Home'))
         self.bind('<End>', functools.partial(self.__on_key_press, 'End'))
-        self.bind('<Configure>',
-            lambda e: self.after_idle(self.__updateWnds))
-
+        self.bind('<Configure>', lambda e: self.after_idle(self.__updateWnds))
 
     def __on_key_press(self, key, event):
         if key == 'Home':
@@ -88,7 +86,7 @@ class EditableTreeview(ttk.Treeview):
 
     def __check_focus(self, event):
         """Checks if the focus has changed"""
-        #print('Event:', event.type, event.x, event.y)
+        # print('Event:', event.type, event.x, event.y)
         changed = False
         if not self._curfocus:
             changed = True
@@ -98,8 +96,8 @@ class EditableTreeview(ttk.Treeview):
         newfocus = self.focus()
         if changed:
             if newfocus:
-                #print('Focus changed to:', newfocus)
-                self._curfocus= newfocus
+                # print('Focus changed to:', newfocus)
+                self._curfocus = newfocus
                 self.__focus(newfocus)
             self.__updateWnds()
 
@@ -107,14 +105,12 @@ class EditableTreeview(ttk.Treeview):
         """Called when focus item has changed"""
         cols = self.__get_display_columns()
         for col in cols:
-            self.__event_info =(col,item)
+            self.__event_info = (col, item)
             self.event_generate('<<TreeviewInplaceEdit>>')
             if col in self._inplace_widgets:
                 w = self._inplace_widgets[col]
-                w.bind('<Key-Tab>',
-                    lambda e: w.tk_focusNext().focus_set())
-                w.bind('<Shift-Key-Tab>',
-                    lambda e: w.tk_focusPrev().focus_set())
+                w.bind('<Key-Tab>', lambda e: w.tk_focusNext().focus_set())
+                w.bind('<Shift-Key-Tab>', lambda e: w.tk_focusPrev().focus_set())
 
     def __updateWnds(self, event=None):
         if not self._curfocus:
@@ -131,19 +127,19 @@ class EditableTreeview(ttk.Treeview):
                     wnd.place_forget()
                 elif col in self._inplace_widgets_show:
                     wnd.place(x=bbox[0], y=bbox[1],
-                        width=bbox[2], height=bbox[3])
+                              width=bbox[2], height=bbox[3])
 
     def __clear_inplace_widgets(self):
         """Remove all inplace edit widgets."""
         cols = self.__get_display_columns()
-        #print('Clear:', cols)
+        # print('Clear:', cols)
         for c in cols:
             if c in self._inplace_widgets:
                 widget = self._inplace_widgets[c]
                 widget.place_forget()
                 self._inplace_widgets_show.pop(c, None)
-                #widget.destroy()
-                #del self._inplace_widgets[c]
+                # widget.destroy()
+                # del self._inplace_widgets[c]
 
     def __get_display_columns(self):
         cols = self.cget('displaycolumns')
@@ -155,7 +151,7 @@ class EditableTreeview(ttk.Treeview):
         return cols
 
     def get_event_info(self):
-        return self.__event_info;
+        return self.__event_info
 
     def __get_value(self, col, item):
         if col == '#0':
@@ -168,7 +164,7 @@ class EditableTreeview(ttk.Treeview):
             self.item(item, text=value)
         else:
             self.set(item, col, value)
-        self.__event_info =(col,item)
+        self.__event_info = (col, item)
         self.event_generate('<<TreeviewCellEdited>>')
 
     def __update_value(self, col, item):
@@ -178,7 +174,6 @@ class EditableTreeview(ttk.Treeview):
         newvalue = self._inplace_vars[col].get()
         if value != newvalue:
             self.__set_value(col, item, newvalue)
-
 
     def inplace_entry(self, col, item):
         if col not in self._inplace_vars:
@@ -231,7 +226,6 @@ class EditableTreeview(ttk.Treeview):
         sb.bind('<Unmap>', lambda e: self.__update_value(col, item))
         sb.bind('<FocusOut>', lambda e: self.__update_value(col, item))
         self._inplace_widgets_show[col] = True
-
 
     def inplace_custom(self, col, item, widget):
         if col not in self._inplace_vars:

@@ -3,18 +3,22 @@ import tkinter.ttk as ttk
 import multiprocessing as mp
 import queue
 import time
-import json, requests
+import json
+import requests
 import locale
 import webbrowser
 import core.constants as constants
 
 from tkinter import messagebox
 from frames.base import Base
+from frames.misc.auctions import Auctions, Card, EventType
 from core.bid import bid, roundBid
 from core.watch import watch
 from os.path import expanduser
 
+
 locale.setlocale(locale.LC_ALL, '')
+
 
 class Bid(Base):
     def __init__(self, master, controller):
@@ -41,6 +45,7 @@ class Bid(Base):
         self.buy = tk.StringVar()
         self.sell = tk.StringVar()
         self.bin = tk.StringVar()
+        self.snipeOnly = tk.IntVar()
 
         self.settings = {
             'rpm': 20,
@@ -49,14 +54,15 @@ class Bid(Base):
             'autoUpdate': 0,
             'buy': 0.9,
             'sell': 1,
-            'bin': 1.25
+            'bin': 1.25,
+            'snipeOnly': 0
         }
 
         # Search for settings
         try:
             with open(constants.SETTINGS_FILE, 'r') as f:
-                self.settings = json.load(f)
-        except FileNotFoundError:
+                self.settings.update(json.load(f))
+        except OSError.FileNotFoundError:
             pass
 
         # do we have a donation in our settings
@@ -71,6 +77,7 @@ class Bid(Base):
         self.buy.set(int(self.settings['buy']*100))
         self.sell.set(int(self.settings['sell']*100))
         self.bin.set(int(self.settings['bin']*100))
+        self.snipeOnly.set(self.settings['snipeOnly'])
 
         # Setup traces
         self.rpm.trace('w', self.save_settings)
@@ -80,13 +87,23 @@ class Bid(Base):
         self.buy.trace('w', self.save_settings)
         self.sell.trace('w', self.save_settings)
         self.bin.trace('w', self.save_settings)
+        self.snipeOnly.trace('w', self.save_settings)
 
         # Setup GUI
         options = tk.Frame(self)
         options.grid(column=0, row=0, sticky='ns')
 
-        self.text = tk.Text(self, bg='#1d93ab', fg='#ffeb7e', bd=0)
-        self.text.grid(column=1, row=0, sticky='news')
+        auctions = tk.Frame(self)
+
+        self.auctionStatus = Auctions(auctions)
+        self.auctionStatus.get_view().grid(column=0, row=0, sticky='nsew', rowspan=2)
+
+        self.logView = tk.Text(auctions, bg='#1d93ab', fg='#ffeb7e', bd=0)
+        self.logView.grid(column=0, row=2, sticky='nsew')
+
+        auctions.grid(column=1, row=0, sticky='nsew')
+        auctions.grid_rowconfigure(0, weight=3)
+        auctions.grid_rowconfigure(1, weight=1)
 
         self.grid_rowconfigure(0, weight=1)
         self.grid_columnconfigure(0, weight=0)
@@ -96,6 +113,7 @@ class Bid(Base):
         back.grid(column=0, row=0, sticky='we')
 
         self.tree = ttk.Treeview(options, columns=('buy', 'sell', 'bin'), selectmode='browse')
+        self.tree.heading('#0', text='Name', anchor='w')
         self.tree.column('buy', width=50, anchor='center')
         self.tree.heading('buy', text='Max Bid')
         self.tree.column('sell', width=50, anchor='center')
@@ -129,8 +147,8 @@ class Bid(Base):
 
         autoUpdateLbl = tk.Label(form, text='Auto Update Pricing:')
         autoUpdateLbl.grid(column=0, row=3, sticky='e')
-        autoUpdateEntry = tk.Checkbutton(form, variable=self.autoUpdate)
-        autoUpdateEntry.grid(column=1, row=3, sticky='w')
+        autoUpdateCheckbox = tk.Checkbutton(form, variable=self.autoUpdate)
+        autoUpdateCheckbox.grid(column=1, row=3, sticky='w')
 
         autoBuyLbl = tk.Label(form, text='Auto Bid %:')
         autoBuyLbl.grid(column=0, row=4, sticky='e')
@@ -147,8 +165,13 @@ class Bid(Base):
         autoBINEntry = tk.Entry(form, width=8, textvariable=self.bin)
         autoBINEntry.grid(column=1, row=6, sticky='w')
 
+        snipeOnlyLbl = tk.Label(form, text='BIN Snipe Only:')
+        snipeOnlyLbl.grid(column=0, row=7, sticky='e')
+        snipeOnlyCheckbox = tk.Checkbutton(form, variable=self.snipeOnly)
+        snipeOnlyCheckbox.grid(column=1, row=7, sticky='w')
+
         self.bidbtn = tk.Button(form, text='Start Bidding', command=self.start)
-        self.bidbtn.grid(column=0, row=7, columnspan=2, padx=5, pady=5)
+        self.bidbtn.grid(column=0, row=8, columnspan=2, padx=5, pady=5)
 
         self.checkQueue()
         self.clearErrors()
@@ -178,7 +201,7 @@ class Bid(Base):
                 self.args['playerList'],
                 self.settings,
                 trades
-                ))
+            ))
             self.p.start()
             self.controller.status.set_credits(self.controller.api.credits)
             self.after(5000, self.bid)
@@ -287,7 +310,7 @@ class Bid(Base):
             self.controller.api,
             [item['player']['id'] for item in self.args['playerList']],
             900
-            ))
+        ))
         self.p.start()
         self._lastUpdate = time.time()
         self.after(900000, self.bid)
@@ -308,16 +331,15 @@ class Bid(Base):
         self.updateLog('%s    Setting %s to %d/%d/%d (based on %d)...\n' % (time.strftime('%Y-%m-%d %H:%M:%S'), displayName, item['buy'], item['sell'], item['bin'], sell))
         return item
 
-
     def lookup_bin(self, player):
-        #lookup BIN
+        # lookup BIN
         r = {'xbox': 0, 'ps4': 0}
         displayName = player['commonName'] if player['commonName'] is not '' else player['lastName']
         response = requests.get('http://www.futbin.com/pages/16/players/filter_processing.php', params={
             'start': 0,
             'length': 30,
             'search[value]': displayName
-            }).json()
+        }).json()
         for p in response['data']:
             if p[len(p)-2] == player['id']:
                 r = {'xbox': int(p[8]), 'ps4': int(p[6])}
@@ -341,17 +363,29 @@ class Bid(Base):
                     login.logout(switchFrame=False)
                     self.after(self._banWait*5*60000, self.relogin, (login))
             elif isinstance(msg, tuple):
-                # Auction Results
-                self.auctionsWon += msg[0]
-                self.sold += msg[1]
-                self.controller.status.set_stats((self.auctionsWon, self.sold))
-                self.controller.status.set_status('Bidding Cycle: %d' % (self._bidCycle))
-                if time.time() - self._startTime > 18000:
-                    self.updateLog('%s    Pausing to prevent ban... Will resume in 1 hour...\n' % (time.strftime('%Y-%m-%d %H:%M:%S')))
-                    self.stop()
-                    login = self.controller.get_frame(Login)
-                    login.logout(switchFrame=False)
-                    self.after(60*60000, self.relogin, (login))
+                if isinstance(msg[0], Card) and isinstance(msg[1], EventType):
+                    if msg[1] == EventType.BIDWAR:
+                        self.auctionStatus.update_status(msg[0], time.strftime('%Y-%m-%d %H:%M:%S'), msg[0].currentBid, tag='war')
+                    elif msg[1] == EventType.NEWBID:
+                        self.auctionStatus.update_status(msg[0], time.strftime('%Y-%m-%d %H:%M:%S'), msg[0].currentBid, tag='bid')
+                    elif (msg[1] == EventType.LOST or msg[1] == EventType.OUTBID):
+                        self.auctionStatus.update_status(msg[0], time.strftime('%Y-%m-%d %H:%M:%S'), msg[0].currentBid, tag='lost')
+                    elif (msg[1] == EventType.BIDWON or msg[1] == EventType.BIN):
+                        self.auctionStatus.update_status(msg[0], time.strftime('%Y-%m-%d %H:%M:%S'), msg[0].currentBid, tag='won')
+                    elif msg[1] == EventType.UPDATE:
+                        self.auctionStatus.update_status(msg[0], time.strftime('%Y-%m-%d %H:%M:%S'), msg[0].currentBid)
+                else:
+                    # Auction Results
+                    self.auctionsWon += msg[0]
+                    self.sold += msg[1]
+                    self.controller.status.set_stats((self.auctionsWon, self.sold))
+                    self.controller.status.set_status('Bidding Cycle: %d' % (self._bidCycle))
+                    if time.time() - self._startTime > 18000:
+                        self.updateLog('%s    Pausing to prevent ban... Will resume in 1 hour...\n' % (time.strftime('%Y-%m-%d %H:%M:%S')))
+                        self.stop()
+                        login = self.controller.get_frame(Login)
+                        login.logout(switchFrame=False)
+                        self.after(60*60000, self.relogin, (login))
             elif isinstance(msg, dict):
                 # Update Pricing
                 self._lastUpdate = time.time()
@@ -397,8 +431,8 @@ class Bid(Base):
         self.after(900000, self.clearErrors)
 
     def updateLog(self, msg):
-        self.text.insert('end',msg)
-        self.text.see(tk.END)
+        self.logView.insert('end', msg)
+        self.logView.see(tk.END)
         self.update_idletasks()
 
     def save_list(self):
@@ -417,6 +451,7 @@ class Bid(Base):
                 'sell': int(self.sell.get())/100 if self.sell.get() else 0,
                 'bin': int(self.bin.get())/100 if self.bin.get() else 0,
                 'donate': self._lastDonate
+                'snipeOnly': self.snipeOnly.get()
             }
             with open(constants.SETTINGS_FILE, 'w') as f:
                     json.dump(self.settings, f)
@@ -432,7 +467,7 @@ class Bid(Base):
             self.controller.show_frame(Login)
 
         Base.active(self)
-        self.text.delete(1.0, tk.END)
+        self.logView.delete(1.0, tk.END)
         self.updateLog('%s    Set Bid Options...\n' % (time.strftime('%Y-%m-%d %H:%M:%S')))
         self.controller.status.set_status('Set Bid Options...')
         self.tree.delete(*self.tree.get_children())
@@ -440,7 +475,8 @@ class Bid(Base):
             displayName = item['player']['commonName'] if item['player']['commonName'] is not '' else item['player']['lastName']
             try:
                 self.tree.insert('', 'end', item['player']['id'], text=displayName, values=(item['buy'], item['sell'], item['bin']))
-            except: pass
+            except:
+                pass
 
         self._lastUpdate = 0
         self._updatedItems = []
