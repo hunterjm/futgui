@@ -450,8 +450,8 @@ class Bid(Base):
                 'buy': int(self.buy.get())/100 if self.buy.get() else 0,
                 'sell': int(self.sell.get())/100 if self.sell.get() else 0,
                 'bin': int(self.bin.get())/100 if self.bin.get() else 0,
+                'snipeOnly': self.snipeOnly.get(),
                 'donate': self._lastDonate
-                'snipeOnly': self.snipeOnly.get()
             }
             with open(constants.SETTINGS_FILE, 'w') as f:
                     json.dump(self.settings, f)
