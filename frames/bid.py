@@ -62,7 +62,7 @@ class Bid(Base):
         try:
             with open(constants.SETTINGS_FILE, 'r') as f:
                 self.settings.update(json.load(f))
-        except OSError.FileNotFoundError:
+        except:
             pass
 
         # do we have a donation in our settings

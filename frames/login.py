@@ -38,7 +38,7 @@ class Login(Base):
             self.code.set(self.data[0]['code'])
             self.platform.set(self.data[0]['platform'])
             self.emulate.set(self.data[0]['emulate'])
-        except (OSError.FileNotFoundError, KeyError):
+        except:
             self.platform.set('xbox')
             self.emulate.set('pc')
 
