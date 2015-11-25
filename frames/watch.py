@@ -128,3 +128,4 @@ class Watch(Base):
 
 from frames.login import Login
 from frames.playersearch import PlayerSearch
+from fut.exceptions import FutError, ExpiredSession

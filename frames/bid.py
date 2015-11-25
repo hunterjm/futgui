@@ -96,7 +96,7 @@ class Bid(Base):
         auctions = tk.Frame(self)
 
         self.auctionStatus = Auctions(auctions)
-        self.auctionStatus.get_view().grid(column=0, row=0, sticky='nsew', rowspan=2)
+        self.auctionStatus.get_view().grid(column=0, row=0, sticky='nsew')
 
         self.logView = tk.Text(auctions, bg='#1d93ab', fg='#ffeb7e', bd=0)
         self.logView.grid(column=0, row=1, sticky='nsew')
@@ -190,18 +190,13 @@ class Bid(Base):
         if self.settings['autoUpdate'] and time.time() - self._lastUpdate > 3600:
             self.updatePrice()
             return
-        # Populate trades with what I am already watching
-        trades = {}
         try:
-            for item in self.controller.api.watchlist():
-                trades[item['tradeId']] = item['resourceId']
             self._bidCycle += 1
             self.p = mp.Process(target=bid, args=(
                 self.q,
                 self.controller.api,
                 self.args['playerList'],
-                self.settings,
-                trades
+                self.settings
             ))
             self.p.start()
             self.controller.status.set_credits(self.controller.api.credits)
@@ -375,10 +370,12 @@ class Bid(Base):
                         self.auctionStatus.update_status(msg[0], time.strftime('%Y-%m-%d %H:%M:%S'), msg[0].currentBid, tag='won')
                     elif msg[1] == EventType.UPDATE:
                         self.auctionStatus.update_status(msg[0], time.strftime('%Y-%m-%d %H:%M:%S'), msg[0].currentBid)
+                    self.controller.status.set_credits(msg[2])
                 else:
                     # Auction Results
                     self.auctionsWon += msg[0]
                     self.sold += msg[1]
+                    self.controller.status.set_credits(msg[2])
                     self.controller.status.set_stats((self.auctionsWon, self.sold))
                     self.controller.status.set_status('Bidding Cycle: %d' % (self._bidCycle))
                     if time.time() - self._startTime > 18000:
