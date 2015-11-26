@@ -36,11 +36,11 @@ class Auctions():
         self.tree.heading("bin", text="BIN")
         self.tree.heading("expires", text="Expires")
 
-        self.tree.tag_configure('won', foreground='#006400', background='grey')
         self.tree.tag_configure('bid', foreground='#006400')
         self.tree.tag_configure('war', foreground='#B77600')
-        self.tree.tag_configure('sold', foreground='#1C7CA9', background='grey')
         self.tree.tag_configure('lost', foreground='#B70000', background='grey')
+        self.tree.tag_configure('won', foreground='#006400', background='grey')
+        self.tree.tag_configure('sold', foreground='#1C7CA9', background='grey')
 
         # scrollbar
         ysb = ttk.Scrollbar(self.view, orient='vertical', command=self.tree.yview)

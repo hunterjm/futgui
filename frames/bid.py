@@ -39,6 +39,7 @@ class Bid(Base):
         self.sell = tk.StringVar()
         self.bin = tk.StringVar()
         self.snipeOnly = tk.IntVar()
+        self.relistAll = tk.IntVar()
 
         self.settings = {
             'rpm': 20,
@@ -48,7 +49,8 @@ class Bid(Base):
             'buy': 0.9,
             'sell': 1,
             'bin': 1.25,
-            'snipeOnly': 0
+            'snipeOnly': 0,
+            'relistAll': 1
         }
 
         # Search for settings
@@ -67,6 +69,7 @@ class Bid(Base):
         self.sell.set(int(self.settings['sell']*100))
         self.bin.set(int(self.settings['bin']*100))
         self.snipeOnly.set(self.settings['snipeOnly'])
+        self.relistAll.set(self.settings['relistAll'])
 
         # Setup traces
         self.rpm.trace('w', self.save_settings)
@@ -77,6 +80,7 @@ class Bid(Base):
         self.sell.trace('w', self.save_settings)
         self.bin.trace('w', self.save_settings)
         self.snipeOnly.trace('w', self.save_settings)
+        self.relistAll.trace('w', self.save_settings)
 
         # Setup GUI
         options = tk.Frame(self)
@@ -160,8 +164,13 @@ class Bid(Base):
         snipeOnlyCheckbox = tk.Checkbutton(form, variable=self.snipeOnly)
         snipeOnlyCheckbox.grid(column=1, row=7, sticky='w')
 
+        relistAllLbl = tk.Label(form, text='Relist at same price:')
+        relistAllLbl.grid(column=0, row=8, sticky='e')
+        relistAllCheckbox = tk.Checkbutton(form, variable=self.relistAll)
+        relistAllCheckbox.grid(column=1, row=8, sticky='w')
+
         self.bidbtn = tk.Button(form, text='Start Bidding', command=self.start)
-        self.bidbtn.grid(column=0, row=8, columnspan=2, padx=5, pady=5)
+        self.bidbtn.grid(column=0, row=9, columnspan=2, padx=5, pady=5)
 
         self.checkQueue()
         self.clearErrors()
@@ -291,6 +300,8 @@ class Bid(Base):
         }).json()
         for p in response['data']:
             if p[len(p)-2] == player['id']:
+                if not p[6]: p[6] = 0
+                if not p[8]: p[8] = 0
                 r = {'xbox': int(p[8]), 'ps4': int(p[6])}
         return r
 
@@ -321,6 +332,8 @@ class Bid(Base):
                         self.auctionStatus.update_status(msg[0], time.strftime('%Y-%m-%d %H:%M:%S'), msg[0].currentBid, tag='lost')
                     elif (msg[1] == EventType.BIDWON or msg[1] == EventType.BIN):
                         self.auctionStatus.update_status(msg[0], time.strftime('%Y-%m-%d %H:%M:%S'), msg[0].currentBid, tag='won')
+                    elif msg[1] == EventType.SOLD:
+                        self.auctionStatus.update_status(msg[0], time.strftime('%Y-%m-%d %H:%M:%S'), msg[0].currentBid, tag='sold')
                     elif msg[1] == EventType.UPDATE:
                         self.auctionStatus.update_status(msg[0], time.strftime('%Y-%m-%d %H:%M:%S'), msg[0].currentBid)
                     self.controller.status.set_credits(msg[2])
@@ -401,7 +414,8 @@ class Bid(Base):
                 'buy': int(self.buy.get())/100 if self.buy.get() else 0,
                 'sell': int(self.sell.get())/100 if self.sell.get() else 0,
                 'bin': int(self.bin.get())/100 if self.bin.get() else 0,
-                'snipeOnly': self.snipeOnly.get()
+                'snipeOnly': self.snipeOnly.get(),
+                'relistAll': self.relistAll.get()
             }
             with open(constants.SETTINGS_FILE, 'w') as f:
                     json.dump(self.settings, f)

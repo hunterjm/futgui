@@ -241,49 +241,60 @@ def bid(q, api, playerList, settings):
                         q.put('%s    Error: %s %s could not be placed in the tradepile...\n' % (time.strftime('%Y-%m-%d %H:%M:%S'), asset['Item']['FirstName'], asset['Item']['LastName']))
                         pileFull = True
 
-            completedTrades = sum([i['tradeState'] in ('expired', 'closed') for i in tradepile])
-            sold = 0
-            if completedTrades > 0:
-                try:
-                    # Clean up Trade Pile & relist items
-                    sold = api.relist(clean=True)
-                    if sold:
-                        q.put('%s    Trade Status: %d items sold\n' % (time.strftime('%Y-%m-%d %H:%M:%S'), sold))
-                        pileFull = False
-                except InternalServerError:
-                    # auto re-list is down.  We have to do this manually...
-                    q.put('%s    Manually re-listing %d players.\n' % (time.strftime('%Y-%m-%d %H:%M:%S'), completedTrades))
+            # relist items
+            expired = sum([i['tradeState'] == 'expired' for i in tradepile])
+            if expired > 0:
+
+                relistFailed = False
+                if settings['relistAll']:
+                    try:
+                        api.relist()
+                    except InternalServerError:
+                        relistFailed = True
+                        pass
+
+                if not settings['relistAll'] or relistFailed:
+                    q.put('%s    Manually re-listing %d players.\n' % (time.strftime('%Y-%m-%d %H:%M:%S'), expired))
                     for i in tradepile:
                         baseId = str(api.baseId(i['resourceId']))
                         if baseId in bidDetails:
-                            sell = bidDetails[baseId]['sell']
-                            binPrice = bidDetails[baseId]['binPrice']
-                            if i['tradeState'] == 'closed':
-                                asset = api.cardInfo(item['resourceId'])
-                                displayName = asset['Item']['CommonName'] if asset['Item']['CommonName'] else asset['Item']['LastName']
-                                card = PlayerCard(item, displayName)
-                                q.put((card, EventType.SOLD, api.credits))
-                                api.tradepileDelete(i['tradeId'])
-                                sold += 1
+                            sell = i['startingBid'] if settings['relistAll'] else bidDetails[baseId]['sell']
+                            binPrice = i['buyNowPrice'] if settings['relistAll'] else bidDetails[baseId]['binPrice']
                             if i['tradeState'] == 'expired' and sell and binPrice:
                                 api.sell(i['id'], sell, binPrice)
 
-                    pass
+            # Log sold items
+            sold = sum([i['tradeState'] == 'closed' for i in tradepile])
+            if sold > 0:
+                for i in tradepile:
+                    if i['tradeState'] == 'closed':
+                        asset = api.cardInfo(i['resourceId'])
+                        displayName = asset['Item']['CommonName'] if asset['Item']['CommonName'] else asset['Item']['LastName']
+                        card = PlayerCard(i, displayName)
+                        q.put((card, EventType.SOLD, api.credits))
+                        q.put('%s    Item Sold: %s %s for %d\n' % (time.strftime('%Y-%m-%d %H:%M:%S'), asset['Item']['FirstName'], asset['Item']['LastName'], i['currentBid']))
+                        api.tradepileDelete(i['tradeId'])
+                        pileFull = False
 
+            # Sleep if we have no more space left
             if pileFull:
 
-                # No use in trying more until min trade is done
-                selling = sorted(tradepile, key=itemgetter('expires'), reverse=True)
-
-                q.put('%s    Trade Pile Full! Resume bidding in %d seconds\n' % (time.strftime('%Y-%m-%d %H:%M:%S'), selling[0]['expires']))
-                time.sleep(selling[0]['expires'])
+                # Update tradepile and verify that we are really full and it just wasn't an error
+                tradepile = api.tradepile()
+                if len(tradepile) >= api.tradepile_size:
+                    # No use in trying more until min trade is done
+                    selling = sorted(tradepile, key=itemgetter('expires'), reverse=True)
+                    q.put('%s    Trade Pile Full! Resume bidding in %d seconds\n' % (time.strftime('%Y-%m-%d %H:%M:%S'), selling[0]['expires']))
+                    time.sleep(selling[0]['expires'])
 
             q.put((auctionsWon, sold, api.credits))
 
             # re-sync tradepile if we won something
-            if auctionsWon or sold:
+            if auctionsWon or expired or sold:
                 tradepile = api.tradepile()
-                auctionsWon = 0
+
+            # Reset auctions won
+            auctionsWon = 0
 
         except (FutError, RequestException) as e:
             q.put(e)
