@@ -11,6 +11,7 @@ class EventType(Enum):
     LOST = 6
     OUTBID = 7
     UPDATE = 8
+    SELLING = 9
 
 class Auctions():
     cards = {}
@@ -38,6 +39,7 @@ class Auctions():
 
         self.tree.tag_configure('bid', foreground='#006400')
         self.tree.tag_configure('war', foreground='#B77600')
+        self.tree.tag_configure('selling', foreground='#1C7CA9')
         self.tree.tag_configure('lost', foreground='#B70000', background='grey')
         self.tree.tag_configure('won', foreground='#006400', background='grey')
         self.tree.tag_configure('sold', foreground='#1C7CA9', background='grey')

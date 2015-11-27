@@ -42,6 +42,13 @@ def bid(q, api, playerList, settings):
     # Grab all items from tradepile
     tradepile = api.tradepile()
 
+    # Log selling players
+    for trade in tradepile:
+        asset = api.cardInfo(trade['resourceId'])
+        displayName = asset['Item']['CommonName'] if asset['Item']['CommonName'] else asset['Item']['LastName']
+        card = PlayerCard(trade, displayName)
+        q.put((card, EventType.SELLING, api.credits))
+
     for defId in bidDetails.keys():
 
         if bidDetails[defId]['maxBid'] < 100:
@@ -136,10 +143,6 @@ def bid(q, api, playerList, settings):
                     # How many of this item do we already have listed?
                     listed = sum([str(api.baseId(trade['resourceId'])) == baseId for trade in tradepile])
 
-                    # Break if we don't have enough credits
-                    if api.credits < settings['minCredits']:
-                        break
-
                     tradeId = item['tradeId']
                     if tradeId not in trades:
                         break
@@ -186,8 +189,8 @@ def bid(q, api, playerList, settings):
 
                     elif item['bidState'] != 'highest':
 
-                        # Continue if we already have too many listed
-                        if listed >= settings['maxPlayer']:
+                        # Continue if we already have too many listed or we don't have enough credits
+                        if listed >= settings['maxPlayer'] or api.credits < settings['minCredits']:
                             continue
 
                         # We were outbid
@@ -298,6 +301,9 @@ def bid(q, api, playerList, settings):
 
         except (FutError, RequestException) as e:
             q.put(e)
+
+    # update our api
+    q.put(api)
 
 from fut.exceptions import FutError, InternalServerError
 from requests.exceptions import RequestException

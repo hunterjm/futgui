@@ -11,6 +11,7 @@ from frames.base import Base
 from frames.misc.auctions import Auctions, Card, EventType
 from core.bid import bid, roundBid
 from core.watch import watch
+from api.delayedcore import DelayedCore
 from os.path import expanduser
 
 
@@ -232,14 +233,14 @@ class Bid(Base):
 
     def stop(self):
         if self._bidding:
+            if self.p is not None and self.p.is_alive():
+                self.p.terminate()
             self._bidding = False
             self._bidCycle = 0
             self._errorCount = 0
             self.controller.status.set_status('Set Bid Options...')
             self.bidbtn.config(text='Start Bidding', command=self.start)
             self.update_idletasks()
-            if self.p is not None and self.p.is_alive():
-                self.p.terminate()
             self.updateLog('%s    Stopped bidding...\n' % (time.strftime('%Y-%m-%d %H:%M:%S')))
 
     def updatePrice(self):
@@ -322,6 +323,8 @@ class Bid(Base):
                     login = self.controller.get_frame(Login)
                     login.logout(switchFrame=False)
                     self.after(self._banWait*5*60000, self.relogin, (login))
+            elif isinstance(msg, DelayedCore):
+                self.controller.api = msg
             elif isinstance(msg, tuple):
                 if isinstance(msg[0], Card) and isinstance(msg[1], EventType):
                     if msg[1] == EventType.BIDWAR:
@@ -332,6 +335,8 @@ class Bid(Base):
                         self.auctionStatus.update_status(msg[0], time.strftime('%Y-%m-%d %H:%M:%S'), msg[0].currentBid, tag='lost')
                     elif (msg[1] == EventType.BIDWON or msg[1] == EventType.BIN):
                         self.auctionStatus.update_status(msg[0], time.strftime('%Y-%m-%d %H:%M:%S'), msg[0].currentBid, tag='won')
+                    elif msg[1] == EventType.SELLING:
+                        self.auctionStatus.update_status(msg[0], time.strftime('%Y-%m-%d %H:%M:%S'), msg[0].currentBid, tag='selling')
                     elif msg[1] == EventType.SOLD:
                         self.auctionStatus.update_status(msg[0], time.strftime('%Y-%m-%d %H:%M:%S'), msg[0].currentBid, tag='sold')
                     elif msg[1] == EventType.UPDATE:
