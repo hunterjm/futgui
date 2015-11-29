@@ -9,8 +9,8 @@ import core.constants as constants
 
 from frames.base import Base
 from frames.misc.auctions import Auctions, Card, EventType
-from core.bid import bid, roundBid
-from core.watch import watch
+from core.bid import bid, increment, roundBid
+from core.watch import lowestBin
 from api.delayedcore import DelayedCore
 from os.path import expanduser
 
@@ -125,53 +125,59 @@ class Bid(Base):
         options.grid_rowconfigure(1, weight=1)
         options.grid_rowconfigure(2, weight=0)
 
+        settingsLbl = tk.Label(form, text='Settings', font=('KnulBold', 16))
+        settingsLbl.grid(column=0, row=0, columnspan=2)
+
         rpmLbl = tk.Label(form, text='RPM:')
-        rpmLbl.grid(column=0, row=0, sticky='e')
+        rpmLbl.grid(column=0, row=1, sticky='e')
         rpmEntry = tk.Entry(form, width=8, textvariable=self.rpm)
-        rpmEntry.grid(column=1, row=0, sticky='w')
+        rpmEntry.grid(column=1, row=1, sticky='w')
 
-        minCreditsLbl = tk.Label(form, text='Min Credits:')
-        minCreditsLbl.grid(column=0, row=1, sticky='e')
+        minCreditsLbl = tk.Label(form, text='Min $:')
+        minCreditsLbl.grid(column=0, row=2, sticky='e')
         minCreditsEntry = tk.Entry(form, width=8, textvariable=self.minCredits)
-        minCreditsEntry.grid(column=1, row=1, sticky='w')
+        minCreditsEntry.grid(column=1, row=2, sticky='w')
 
-        maxPlayerLbl = tk.Label(form, text='Max Players:')
-        maxPlayerLbl.grid(column=0, row=2, sticky='e')
+        maxPlayerLbl = tk.Label(form, text='Max Cards:')
+        maxPlayerLbl.grid(column=0, row=3, sticky='e')
         maxPlayerEntry = tk.Entry(form, width=8, textvariable=self.maxPlayer)
-        maxPlayerEntry.grid(column=1, row=2, sticky='w')
+        maxPlayerEntry.grid(column=1, row=3, sticky='w')
 
-        autoUpdateLbl = tk.Label(form, text='Auto Update Pricing:')
-        autoUpdateLbl.grid(column=0, row=3, sticky='e')
+        snipeOnlyLbl = tk.Label(form, text='BIN Snipe:')
+        snipeOnlyLbl.grid(column=0, row=4, sticky='e')
+        snipeOnlyCheckbox = tk.Checkbutton(form, variable=self.snipeOnly)
+        snipeOnlyCheckbox.grid(column=1, row=4, sticky='w')
+
+        pricingLbl = tk.Label(form, text='Pricing', font=('KnulBold', 16))
+        pricingLbl.grid(column=2, row=0, columnspan=2)
+
+        autoUpdateLbl = tk.Label(form, text='Auto Update:')
+        autoUpdateLbl.grid(column=2, row=1, sticky='e')
         autoUpdateCheckbox = tk.Checkbutton(form, variable=self.autoUpdate)
-        autoUpdateCheckbox.grid(column=1, row=3, sticky='w')
+        autoUpdateCheckbox.grid(column=3, row=1, sticky='w')
 
         autoBuyLbl = tk.Label(form, text='Auto Bid %:')
-        autoBuyLbl.grid(column=0, row=4, sticky='e')
-        autoBuyEntry = tk.Entry(form, width=8, textvariable=self.buy)
-        autoBuyEntry.grid(column=1, row=4, sticky='w')
+        autoBuyLbl.grid(column=2, row=2, sticky='e')
+        autoBuyEntry = tk.Entry(form, width=4, textvariable=self.buy)
+        autoBuyEntry.grid(column=3, row=2, sticky='w')
 
         autoSellLbl = tk.Label(form, text='Auto Sell %:')
-        autoSellLbl.grid(column=0, row=5, sticky='e')
-        autoSellEntry = tk.Entry(form, width=8, textvariable=self.sell)
-        autoSellEntry.grid(column=1, row=5, sticky='w')
+        autoSellLbl.grid(column=2, row=3, sticky='e')
+        autoSellEntry = tk.Entry(form, width=4, textvariable=self.sell)
+        autoSellEntry.grid(column=3, row=3, sticky='w')
 
         autoBINLbl = tk.Label(form, text='Auto BIN %:')
-        autoBINLbl.grid(column=0, row=6, sticky='e')
-        autoBINEntry = tk.Entry(form, width=8, textvariable=self.bin)
-        autoBINEntry.grid(column=1, row=6, sticky='w')
+        autoBINLbl.grid(column=2, row=4, sticky='e')
+        autoBINEntry = tk.Entry(form, width=4, textvariable=self.bin)
+        autoBINEntry.grid(column=3, row=4, sticky='w')
 
-        snipeOnlyLbl = tk.Label(form, text='BIN Snipe Only:')
-        snipeOnlyLbl.grid(column=0, row=7, sticky='e')
-        snipeOnlyCheckbox = tk.Checkbutton(form, variable=self.snipeOnly)
-        snipeOnlyCheckbox.grid(column=1, row=7, sticky='w')
-
-        relistAllLbl = tk.Label(form, text='Relist at same price:')
-        relistAllLbl.grid(column=0, row=8, sticky='e')
+        relistAllLbl = tk.Label(form, text='Same Relist $:')
+        relistAllLbl.grid(column=2, row=5, sticky='e')
         relistAllCheckbox = tk.Checkbutton(form, variable=self.relistAll)
-        relistAllCheckbox.grid(column=1, row=8, sticky='w')
+        relistAllCheckbox.grid(column=3, row=5, sticky='w')
 
         self.bidbtn = tk.Button(form, text='Start Bidding', command=self.start)
-        self.bidbtn.grid(column=0, row=9, columnspan=2, padx=5, pady=5)
+        self.bidbtn.grid(column=0, row=6, columnspan=4, padx=5, pady=5)
 
         self.checkQueue()
         self.clearErrors()
@@ -246,33 +252,17 @@ class Bid(Base):
     def updatePrice(self):
         self.updateLog('%s    Updating Prices for Player List...\n' % (time.strftime('%Y-%m-%d %H:%M:%S')))
         self._updatedItems = []
-        login = self.controller.get_frame(Login)
-        platform = login.platform.get()
-        if platform in ('xbox', 'ps4'):
-            updated = True
-            for item in self.args['playerList']:
-                lowBin = self.lookup_bin(item['player'])[platform]
-                modifiedSell = item['sell']/self.settings['sell']
-                if item['sell'] and abs(modifiedSell - lowBin)/modifiedSell > 0.1:
-                    # Take the long route if it is not within 10% of current setting
-                    updated = False
-                    break
-                item = self.setPrice(item, lowBin)
-            if updated:
-                self._lastUpdate = time.time()
-                self.bid()
-                return
-
-        self.updateLog('%s    This is going to take 15 minutes...\n' % (time.strftime('%Y-%m-%d %H:%M:%S')))
-        self.p = mp.Process(target=watch, args=(
+        # it takes around 3 searches per player, based on RPM
+        wait = (60/self.settings['rpm']) * 3 * len(self.args['playerList'])
+        self.updateLog('%s    This is going to take around %.1f minute(s)...\n' % (time.strftime('%Y-%m-%d %H:%M:%S'), wait/60))
+        self.p = mp.Process(target=lowestBin, args=(
             self.q,
             self.controller.api,
-            [item['player']['id'] for item in self.args['playerList']],
-            900
+            [item['player']['id'] for item in self.args['playerList']]
         ))
         self.p.start()
         self._lastUpdate = time.time()
-        self.after(900000, self.bid)
+        self.after(int(wait*1000), self.bid)
 
     def setPrice(self, item, sell):
         item['buy'] = roundBid(sell*self.settings['buy'])
@@ -364,22 +354,13 @@ class Bid(Base):
                         continue
                     if item['player']['id'] == msg['defId']:
                         displayName = item['player']['commonName'] if item['player']['commonName'] is not '' else item['player']['lastName']
-                        if msg['active'] == 0:
-                            self._updatedItems.append(item['player']['id'])
-                            if msg['bidding'] > 2:
-                                modifiedSell = item['sell']/self.settings['sell']
-                                if abs(modifiedSell - msg['minUnsoldList'])/modifiedSell > 0.15:
-                                    # Go with median
-                                    item = self.setPrice(item, msg['median'])
-                                else:
-                                    # Go with lowest unsold
-                                    item = self.setPrice(item, msg['minUnsoldList'])
-                            else:
-                                self.updateLog('%s    Not enough info to update %s...\n' % (time.strftime('%Y-%m-%d %H:%M:%S'), displayName))
-                        elif time.time() - self._lastUpdate > 60:
-                            self.updateLog('%s    Watching %d of %d trades for %s...\n' % (time.strftime('%Y-%m-%d %H:%M:%S'), msg['active'], msg['total'], displayName))
+                        if msg['num'] > 10:
+                            bid = msg['lowestBIN'] - increment(msg['lowestBIN'])
+                            self.updateLog('%s    %d %s listed... Lowering Bid to %d\n' % (time.strftime('%Y-%m-%d %H:%M:%S'), msg['num'], displayName, bid))
                         else:
-                            self.controller.status.set_status('Watching %d of %d trades for %s...' % (msg['active'], msg['total'], displayName))
+                            bid = msg['lowestBIN']
+                            self.updateLog('%s    %d %s listed... Setting Bid to %d\n' % (time.strftime('%Y-%m-%d %H:%M:%S'), msg['num'], displayName, bid))
+                        item = self.setPrice(item, bid)
                         break
             else:
                 # Normal Message
