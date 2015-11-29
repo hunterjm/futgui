@@ -1,5 +1,30 @@
 import math
 
+def lowestBin(q, api, defIds):
+
+    api.resetSession()
+
+    if not isinstance(defIds, (list, tuple)):
+        defIds = (defIds,)
+
+    def find(api, defId, buy=None, num=0):
+        lowest = buy
+        items = api.searchAuctions('player', defId=defId, max_buy=buy, page_size=50)
+        if items:
+            lowest = min([i['buyNowPrice'] for i in items])
+            num = len([i['buyNowPrice'] == lowest for i in items])
+            if buy is None or lowest < buy:
+                return find(api, defId, lowest, num)
+        return (lowest, num)
+
+    for defId in defIds:
+        result = find(api, defId)
+        q.put({
+            'defId': defId,
+            'lowestBIN': result[0],
+            'num': result[1]
+        })
+
 
 def watch(q, api, defIds, length=1200):
 
