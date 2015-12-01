@@ -137,7 +137,7 @@ def bid(q, api, playerList, settings):
                 q.put('%s    Updating watched items...\n' % (time.strftime('%Y-%m-%d %H:%M:%S')))
                 for item in api.tradeStatus([tradeId for tradeId in trades]):
                     item['resourceId'] = trades[item['tradeId']]
-                    baseId = str(api.baseId(item['resourceId']))
+                    baseId = str(abs(item['resourceId'] + 0x80000000))
                     if baseId not in bidDetails:
                         continue
                     maxBid = bidDetails[baseId]['maxBid']
@@ -148,7 +148,7 @@ def bid(q, api, playerList, settings):
 
                     tradeId = item['tradeId']
                     if tradeId not in trades:
-                        break
+                        continue
 
                     asset = api.cardInfo(trades[tradeId])
                     displayName = asset['Item']['CommonName'] if asset['Item']['CommonName'] else asset['Item']['LastName']
@@ -156,7 +156,6 @@ def bid(q, api, playerList, settings):
 
                     # Handle Expired Items
                     if item['expires'] == -1:
-
                         if (item['bidState'] == 'highest' or (item['tradeState'] == 'closed' and item['bidState'] == 'buyNow')):
 
                             # We won! Send to Pile!
@@ -191,7 +190,6 @@ def bid(q, api, playerList, settings):
                                 del trades[tradeId]
 
                     elif item['bidState'] != 'highest':
-
                         # Continue if we already have too many listed or we don't have enough credits
                         if listed >= settings['maxPlayer'] or api.credits < settings['minCredits']:
                             continue
@@ -218,7 +216,7 @@ def bid(q, api, playerList, settings):
             # buy now goes directly to unassigned now
             if binWon:
                 for item in api.unassigned():
-                    baseId = str(api.baseId(item['resourceId']))
+                    baseId = str(abs(item['resourceId'] + 0x80000000))
                     if baseId not in bidDetails:
                         continue
                     maxBid = bidDetails[baseId]['maxBid']
@@ -262,7 +260,7 @@ def bid(q, api, playerList, settings):
                 if not settings['relistAll'] or relistFailed:
                     q.put('%s    Manually re-listing %d players.\n' % (time.strftime('%Y-%m-%d %H:%M:%S'), expired))
                     for i in tradepile:
-                        baseId = str(api.baseId(i['resourceId']))
+                        baseId = str(abs(item['resourceId'] + 0x80000000))
                         if baseId in bidDetails:
                             sell = i['startingBid'] if settings['relistAll'] else bidDetails[baseId]['sell']
                             binPrice = i['buyNowPrice'] if settings['relistAll'] else bidDetails[baseId]['binPrice']

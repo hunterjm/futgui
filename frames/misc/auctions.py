@@ -56,15 +56,11 @@ class Auctions():
     def get_view(self):
         return self.view
 
-    def add_auction(self, card, timestamp, currbid, index='end', tag=''):
-        if not card.cardid in self.cards:
-            return self.tree.insert("", index, card.cardid, text=card.cardname, values=(timestamp, card.startingBid,
-                                                                                        currbid, card.buyNowPrice,
-                                                                                        card.expires), tags=(tag,))
-
     def update_status(self, card, timestamp, currbid, tag=''):
         if not card.cardid in self.cards:
-            self.add_auction(card, timestamp, currbid, 'end', tag)
+            self.tree.insert("", 'end', card.cardid, text=card.cardname, values=(timestamp, card.startingBid,
+                                                                                        currbid, card.buyNowPrice,
+                                                                                        card.expires), tags=(tag,))
         else:
             options = self.tree.item(card.cardid)
             options['values'] = (timestamp, card.startingBid,
