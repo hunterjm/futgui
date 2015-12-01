@@ -50,19 +50,17 @@ class Auctions():
         self.tree.grid(row=0, column=0, sticky='news')
         ysb.grid(row=0, column=1, sticky='ns')
 
+        # Timer to decrease estimates seconds
+        self.decreaseExpires()
+
     def get_view(self):
         return self.view
 
-    def add_auction(self, card, timestamp, currbid, index='end', tag=''):
-        if not card.cardid in self.cards:
-            self.cards[card.cardid] = card
-            return self.tree.insert("", index, card.cardid, text=card.cardname, values=(timestamp, card.startingBid,
-                                                                                        currbid, card.buyNowPrice,
-                                                                                        card.expires), tags=(tag,))
-
     def update_status(self, card, timestamp, currbid, tag=''):
         if not card.cardid in self.cards:
-            self.add_auction(card, timestamp, currbid, 'end', tag)
+            self.tree.insert("", 'end', card.cardid, text=card.cardname, values=(timestamp, card.startingBid,
+                                                                                        currbid, card.buyNowPrice,
+                                                                                        card.expires), tags=(tag,))
         else:
             options = self.tree.item(card.cardid)
             options['values'] = (timestamp, card.startingBid,
@@ -73,6 +71,22 @@ class Auctions():
             self.tree.item(card.cardid, text=options['text'], values=options['values'], tags=options['tags'])
         self.tree.see(card.cardid)
         self.tree.selection_set([card.cardid])
+        self.cards[card.cardid] = card
+
+    def decreaseExpires(self):
+        for cardid in self.cards:
+            card = self.cards[cardid]
+            if not card.isExpired:
+                card.expires = max(0, card.expires - 1)
+                if card.expires == 0:
+                    card.isExpired = True
+                cardval = self.tree.item(card.cardid)
+                # Expires is the last column in the tree view
+                cardval['values'][4] = card.expires
+                self.cards[cardid] = card
+                self.tree.item(card.cardid, text=cardval['text'], values=cardval['values'], tags=cardval['tags'])
+
+        self.tree.after(1000, self.decreaseExpires)
 
 class Card():
 
@@ -83,7 +97,8 @@ class Card():
         self.buyNowPrice = item['buyNowPrice'] if item['buyNowPrice'] is not None else item['lastSalePrice']
         self.startingBid = item['startingBid'] if item['startingBid'] is not None else "BIN"
         self.currentBid = item['currentBid'] if item['currentBid'] is not None else item['lastSalePrice']
-        self.expires = item['expires'] if item['expires'] is not None else -1
+        self.expires = item['expires'] if item['expires'] is not None else 0
+        self.isExpired = False
 
 class PlayerCard(Card):
 
