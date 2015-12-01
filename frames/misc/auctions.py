@@ -58,7 +58,6 @@ class Auctions():
 
     def add_auction(self, card, timestamp, currbid, index='end', tag=''):
         if not card.cardid in self.cards:
-            self.cards[card.cardid] = card
             return self.tree.insert("", index, card.cardid, text=card.cardname, values=(timestamp, card.startingBid,
                                                                                         currbid, card.buyNowPrice,
                                                                                         card.expires), tags=(tag,))
@@ -76,6 +75,7 @@ class Auctions():
             self.tree.item(card.cardid, text=options['text'], values=options['values'], tags=options['tags'])
         self.tree.see(card.cardid)
         self.tree.selection_set([card.cardid])
+        self.cards[card.cardid] = card
 
     def decreaseExpires(self):
         for cardid in self.cards:
