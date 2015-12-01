@@ -16,6 +16,17 @@ def increment(bid):
     else:
         return 1000
 
+def decrement(bid):
+    if bid <= 1000:
+        return 50
+    elif bid <= 10000:
+        return 100
+    elif bid <= 50000:
+        return 250
+    elif bid <= 100000:
+        return 500
+    else:
+        return 1000
 
 def roundBid(bid):
     return int(increment(bid) * round(float(bid)/increment(bid)))
@@ -97,7 +108,7 @@ def bid(q, api, playerList, settings):
                 # Search first 50 items in my price range to bid on within 5 minutes
                 if not settings['snipeOnly']:
                     bidon = 0
-                    subtract = increment(bidDetails[defId]['maxBid'])
+                    subtract = decrement(bidDetails[defId]['maxBid'])
                     for item in api.searchAuctions('player', defId=defId, max_price=bidDetails[defId]['maxBid']-subtract, start=0, page_size=50):
                         # player safety checks for every possible bid
                         # Let's look at last 5 minutes for now and bid on 5 players max

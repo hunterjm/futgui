@@ -1,5 +1,5 @@
 import math
-from core.bid import increment
+from core.bid import decrement
 
 def lowestBin(q, api, defIds):
 
@@ -16,7 +16,7 @@ def lowestBin(q, api, defIds):
             num = sum([i['buyNowPrice'] == lowest for i in items])
             # If we have 50 of the same result, go one lower
             if num == 50:
-                lowest -= increment(lowest)
+                lowest -= decrement(lowest)
             if buy is None or lowest < buy:
                 return find(api, defId, lowest, num)
         return (lowest, num)
