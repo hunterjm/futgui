@@ -45,7 +45,10 @@ def bid(q, api, playerList, settings):
     # Log selling players
     for trade in tradepile:
         asset = api.cardInfo(trade['resourceId'])
-        displayName = asset['Item']['CommonName'] if asset['Item']['CommonName'] else asset['Item']['LastName']
+        if str(asset['Item']['ItemType']).startswith('Player'):
+            displayName = asset['Item']['CommonName'] if asset['Item']['CommonName'] else asset['Item']['LastName']
+        else:
+            displayName = asset['Item']['Desc']
         card = PlayerCard(trade, displayName)
         q.put((card, EventType.SELLING, api.credits))
 

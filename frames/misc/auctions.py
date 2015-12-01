@@ -80,12 +80,15 @@ class Auctions():
     def decreaseExpires(self):
         for cardid in self.cards:
             card = self.cards[cardid]
-            card.expires = max(0, card.expires - 1)
-            cardval = self.tree.item(card.cardid)
-            # Expires is the last column in the tree view
-            cardval['values'][4] = card.expires
-            self.cards[cardid] = card
-            self.tree.item(card.cardid, text=cardval['text'], values=cardval['values'], tags=cardval['tags'])
+            if not card.isExpired:
+                card.expires = max(0, card.expires - 1)
+                if card.expires == 0:
+                    card.isExpired = True
+                cardval = self.tree.item(card.cardid)
+                # Expires is the last column in the tree view
+                cardval['values'][4] = card.expires
+                self.cards[cardid] = card
+                self.tree.item(card.cardid, text=cardval['text'], values=cardval['values'], tags=cardval['tags'])
 
         self.tree.after(1000, self.decreaseExpires)
 
@@ -99,6 +102,7 @@ class Card():
         self.startingBid = item['startingBid'] if item['startingBid'] is not None else "BIN"
         self.currentBid = item['currentBid'] if item['currentBid'] is not None else item['lastSalePrice']
         self.expires = item['expires'] if item['expires'] is not None else 0
+        self.isExpired = False
 
 class PlayerCard(Card):
 
