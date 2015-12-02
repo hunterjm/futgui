@@ -22,12 +22,15 @@ def lowestBin(q, api, defIds):
         return (lowest, num)
 
     for defId in defIds:
-        result = find(api, defId)
-        q.put({
-            'defId': defId,
-            'lowestBIN': result[0],
-            'num': result[1]
-        })
+        try:
+            result = find(api, defId)
+            q.put({
+                'defId': defId,
+                'lowestBIN': result[0],
+                'num': result[1]
+            })
+        except FutError as e:
+            q.put(e)
 
 
 def watch(q, api, defIds, length=1200):
