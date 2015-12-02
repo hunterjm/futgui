@@ -56,7 +56,7 @@ class Auctions():
     def get_view(self):
         return self.view
 
-    def update_status(self, card, timestamp, currbid, tag=''):
+    def update_status(self, card, timestamp, currbid, tag='', highlight=True):
         if not card.cardid in self.cards:
             self.tree.insert("", 'end', card.cardid, text=card.cardname, values=(timestamp, card.startingBid,
                                                                                         currbid, card.buyNowPrice,
@@ -69,9 +69,15 @@ class Auctions():
             if tag:
                 options['tags'] = (tag,)
             self.tree.item(card.cardid, text=options['text'], values=options['values'], tags=options['tags'])
-        self.tree.see(card.cardid)
-        self.tree.selection_set([card.cardid])
+
+        # Highlight the row and make sure it is visible
+        if highlight:
+            self.tree.see(card.cardid)
+            self.tree.selection_set([card.cardid])
+
+        # Update the cards dictionary with the new entry
         self.cards[card.cardid] = card
+
 
     def decreaseExpires(self):
         for cardid in self.cards:
