@@ -8,7 +8,7 @@ def lowestBin(q, api, defIds):
     if not isinstance(defIds, (list, tuple)):
         defIds = (defIds,)
 
-    def find(api, defId, buy=None, num=0):
+    def find(api, defId, buy=0, num=0):
         lowest = buy
         items = api.searchAuctions('player', defId=defId, max_buy=buy, page_size=50)
         if items:
@@ -17,7 +17,7 @@ def lowestBin(q, api, defIds):
             # If we have 50 of the same result, go one lower
             if num == 50:
                 lowest -= decrement(lowest)
-            if buy is None or lowest < buy:
+            if buy == 0 or lowest < buy:
                 return find(api, defId, lowest, num)
         return (lowest, num)
 
