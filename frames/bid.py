@@ -377,7 +377,7 @@ class Bid(Base):
                     elif msg[1] == EventType.SOLD:
                         self.auctionStatus.update_status(msg[0], time.strftime('%Y-%m-%d %H:%M:%S'), msg[0].currentBid, tag='sold')
                     elif msg[1] == EventType.UPDATE:
-                        self.auctionStatus.update_status(msg[0], time.strftime('%Y-%m-%d %H:%M:%S'), msg[0].currentBid)
+                        self.auctionStatus.update_status(msg[0], time.strftime('%Y-%m-%d %H:%M:%S'), msg[0].currentBid, highlight=False)
                     self.controller.status.set_credits(msg[2])
                 else:
                     # Auction Results

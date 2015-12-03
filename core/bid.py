@@ -112,7 +112,7 @@ def bid(q, api, playerList, settings):
                     for item in api.searchAuctions('player', defId=defId, max_price=bidDetails[defId]['maxBid']-subtract, start=0, page_size=50):
                         # player safety checks for every possible bid
                         # Let's look at last 5 minutes for now and bid on 5 players max
-                        if item['expires'] > 600 or bidon >= 5 or listed >= settings['maxPlayer'] or api.credits < settings['minCredits']:
+                        if item['expires'] > 300 or bidon >= 5 or listed >= settings['maxPlayer'] or api.credits < settings['minCredits']:
                             break
 
                         # No Dups
@@ -164,6 +164,9 @@ def bid(q, api, playerList, settings):
                     asset = api.cardInfo(trades[tradeId])
                     displayName = asset['Item']['CommonName'] if asset['Item']['CommonName'] else asset['Item']['LastName']
                     card = PlayerCard(item, displayName)
+
+                    # Update the card, regardless what will happen
+                    q.put((card, EventType.UPDATE, api.credits))
 
                     # Handle Expired Items
                     if item['expires'] == -1:
@@ -221,9 +224,6 @@ def bid(q, api, playerList, settings):
                             else:
                                 q.put('%s    Bid Error: You are not allowed to bid on this trade\n' % (time.strftime('%Y-%m-%d %H:%M:%S')))
 
-                    else:
-                        q.put((card, EventType.UPDATE, api.credits))
-
             # buy now goes directly to unassigned now
             if binWon:
                 for item in api.unassigned():
@@ -271,7 +271,7 @@ def bid(q, api, playerList, settings):
                 if not settings['relistAll'] or relistFailed:
                     q.put('%s    Manually re-listing %d players.\n' % (time.strftime('%Y-%m-%d %H:%M:%S'), expired))
                     for i in tradepile:
-                        baseId = str(abs(item['resourceId'] + 0x80000000))
+                        baseId = str(abs(i['resourceId'] + 0x80000000))
                         if baseId in bidDetails:
                             sell = i['startingBid'] if settings['relistAll'] else bidDetails[baseId]['sell']
                             binPrice = i['buyNowPrice'] if settings['relistAll'] else bidDetails[baseId]['binPrice']
