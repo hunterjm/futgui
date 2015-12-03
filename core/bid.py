@@ -271,7 +271,7 @@ def bid(q, api, playerList, settings):
                 if not settings['relistAll'] or relistFailed:
                     q.put('%s    Manually re-listing %d players.\n' % (time.strftime('%Y-%m-%d %H:%M:%S'), expired))
                     for i in tradepile:
-                        baseId = str(abs(item['resourceId'] + 0x80000000))
+                        baseId = str(abs(i['resourceId'] + 0x80000000))
                         if baseId in bidDetails:
                             sell = i['startingBid'] if settings['relistAll'] else bidDetails[baseId]['sell']
                             binPrice = i['buyNowPrice'] if settings['relistAll'] else bidDetails[baseId]['binPrice']
