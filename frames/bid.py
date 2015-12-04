@@ -183,6 +183,7 @@ class Bid(Base):
         self.clearErrors()
 
     def bid(self):
+
         if not self._bidding:
             return
         if self.p is not None and self.p.is_alive():
@@ -200,7 +201,7 @@ class Bid(Base):
             self.p = mp.Process(target=bid, args=(
                 self.q,
                 self.controller.api,
-                self.args['playerList'],
+                self.userPlayers,
                 self.settings
             ))
             self.p.start()
@@ -253,32 +254,32 @@ class Bid(Base):
         self.updateLog('%s    Updating Prices for Player List...\n' % (time.strftime('%Y-%m-%d %H:%M:%S')))
         self._updatedItems = []
         # it takes around 3 searches per player, based on RPM
-        wait = (60/self.settings['rpm']) * 3 * len(self.args['playerList'])
+        wait = (60/self.settings['rpm']) * 3 * len(self.userPlayers)
         self.updateLog('%s    This is going to take around %.1f minute(s)...\n' % (time.strftime('%Y-%m-%d %H:%M:%S'), wait/60))
         self.p = mp.Process(target=lowestBin, args=(
             self.q,
             self.controller.api,
-            [item['player']['id'] for item in self.args['playerList']]
+            [player.playerid for player in self.userPlayers]
         ))
         self.p.start()
         self._lastUpdate = time.time()
         self.after(int(wait*1000), self.bid)
 
-    def setPrice(self, item, sell):
-        item['buy'] = roundBid(sell*self.settings['buy'])
-        item['sell'] = roundBid(sell*self.settings['sell'])
-        item['bin'] = roundBid(sell*self.settings['bin'])
-        self.tree.set(item['player']['id'], 'buy', item['buy'])
-        self.tree.set(item['player']['id'], 'sell', item['sell'])
-        self.tree.set(item['player']['id'], 'bin', item['bin'])
+    def setPrice(self, player, sell):
+        player.maxBuy = roundBid(sell*self.settings['buy'])
+        player.sell = roundBid(sell*self.settings['sell'])
+        player.bin = roundBid(sell*self.settings['bin'])
+        self.tree.set(player.playerid, 'buy', player.maxBuy)
+        self.tree.set(player.playerid, 'sell', player.sell)
+        self.tree.set(player.playerid, 'bin', player.bin)
         playersearch = self.controller.get_frame(PlayerSearch)
-        playersearch.tree.set(item['player']['id'], 'buy', item['buy'])
-        playersearch.tree.set(item['player']['id'], 'sell', item['sell'])
-        playersearch.tree.set(item['player']['id'], 'bin', item['bin'])
-        self.save_list()
-        displayName = item['player']['commonName'] if item['player']['commonName'] is not '' else item['player']['lastName']
-        self.updateLog('%s    Setting %s to %d/%d/%d (based on %d)...\n' % (time.strftime('%Y-%m-%d %H:%M:%S'), displayName, item['buy'], item['sell'], item['bin'], sell))
-        return item
+        playersearch.tree.set(player.playerid, 'buy', player.maxBuy)
+        playersearch.tree.set(player.playerid, 'sell', player.sell)
+        playersearch.tree.set(player.playerid, 'bin', player.bin)
+        self.updateLog('%s    Setting %s to %d/%d/%d (based on %d)...\n' % (time.strftime('%Y-%m-%d %H:%M:%S'),
+                                                                            player.displayName, player.maxBuy, player.sell,
+                                                                            player.bin, sell))
+        return player
 
     def lookup_bin(self, player):
         # lookup BIN
@@ -326,7 +327,7 @@ class Bid(Base):
                     elif (msg[1] == EventType.BIDWON or msg[1] == EventType.BIN):
                         self.auctionStatus.update_status(msg[0], time.strftime('%Y-%m-%d %H:%M:%S'), msg[0].currentBid, tag='won')
                     elif msg[1] == EventType.SELLING:
-                        self.auctionStatus.update_status(msg[0], time.strftime('%Y-%m-%d %H:%M:%S'), msg[0].currentBid, tag='selling')
+                        self.auctionStatus.update_status(msg[0], time.strftime('%Y-%m-%d %H:%M:%S'), msg[0].currentBid, tag='selling', highlight=False)
                     elif msg[1] == EventType.SOLD:
                         self.auctionStatus.update_status(msg[0], time.strftime('%Y-%m-%d %H:%M:%S'), msg[0].currentBid, tag='sold')
                     elif msg[1] == EventType.UPDATE:
@@ -348,19 +349,18 @@ class Bid(Base):
             elif isinstance(msg, dict):
                 # Update Pricing
                 self._lastUpdate = time.time()
-                for item in self.args['playerList']:
+                for player in self.userPlayers:
                     # Skip those that are finished
-                    if item['player']['id'] in self._updatedItems:
+                    if player.playerid in self._updatedItems:
                         continue
-                    if item['player']['id'] == msg['defId']:
-                        displayName = item['player']['commonName'] if item['player']['commonName'] is not '' else item['player']['lastName']
+                    if player.playerid == msg['defId']:
                         if msg['num'] > 10:
                             bid = msg['lowestBIN'] - increment(msg['lowestBIN'])
-                            self.updateLog('%s    %d %s listed... Lowering Bid to %d\n' % (time.strftime('%Y-%m-%d %H:%M:%S'), msg['num'], displayName, bid))
+                            self.updateLog('%s    %d %s listed... Lowering Bid to %d\n' % (time.strftime('%Y-%m-%d %H:%M:%S'), msg['num'], player.displayName, bid))
                         else:
                             bid = msg['lowestBIN']
-                            self.updateLog('%s    %d %s listed... Setting Bid to %d\n' % (time.strftime('%Y-%m-%d %H:%M:%S'), msg['num'], displayName, bid))
-                        item = self.setPrice(item, bid)
+                            self.updateLog('%s    %d %s listed... Setting Bid to %d\n' % (time.strftime('%Y-%m-%d %H:%M:%S'), msg['num'], player.displayName, bid))
+                        item = self.setPrice(player, bid)
                         break
             else:
                 # Normal Message
@@ -384,11 +384,6 @@ class Bid(Base):
         self.logView.insert('end', msg)
         self.logView.see(tk.END)
         self.update_idletasks()
-
-    def save_list(self):
-        self.args['playerFile'][self.controller.user] = self.args['playerList']
-        with open(constants.PLAYERS_FILE, 'w') as f:
-                json.dump(self.args['playerFile'], f)
 
     def save_settings(self, *args):
         try:
@@ -421,12 +416,9 @@ class Bid(Base):
         self.updateLog('%s    Set Bid Options...\n' % (time.strftime('%Y-%m-%d %H:%M:%S')))
         self.controller.status.set_status('Set Bid Options...')
         self.tree.delete(*self.tree.get_children())
-        for item in self.args['playerList']:
-            displayName = item['player']['commonName'] if item['player']['commonName'] is not '' else item['player']['lastName']
-            try:
-                self.tree.insert('', 'end', item['player']['id'], text=displayName, values=(item['buy'], item['sell'], item['bin']))
-            except:
-                pass
+        self.userPlayers = self.args['userPlayers']
+        for player in self.userPlayers:
+            self.tree.insert('', 'end', player.playerid, text=player.displayName, values=(player.maxBuy, player.sell, player.bin))
 
         self._lastUpdate = 0
         self._updatedItems = []

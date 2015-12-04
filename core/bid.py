@@ -35,17 +35,10 @@ def roundBid(bid):
 def bid(q, api, playerList, settings):
     pileFull = False
     auctionsWon = 0
-    bidDetails = {}
     trades = {}
+    playersIds = {p.playerid : p for p in playerList} # dict of ids
 
     api.resetSession()
-
-    for item in playerList:
-        bidDetails[item['player']['id']] = {
-            'maxBid': item['buy'],
-            'sell': item['sell'],
-            'binPrice': item['bin']
-        }
 
     for item in api.watchlist():
         trades[item['tradeId']] = item['resourceId']
@@ -63,22 +56,22 @@ def bid(q, api, playerList, settings):
         card = PlayerCard(trade, displayName)
         q.put((card, EventType.SELLING, api.credits))
 
-    for defId in bidDetails.keys():
+    for player in playerList:
 
-        if bidDetails[defId]['maxBid'] < 100:
+        if player.maxBuy < 100:
             continue
 
         try:
 
             # How many of this item do we already have listed?
-            listed = sum([str(api.baseId(item['resourceId'])) == defId for item in tradepile])
+            listed = sum([str(api.baseId(item['resourceId'])) == player.playerid for item in tradepile])
 
             # Only bid if we don't already have a full trade pile and don't own too many of this player
             binWon = False
             if not pileFull and api.credits > settings['minCredits'] and listed < settings['maxPlayer']:
 
                 # Look for any BIN less than the BIN price
-                for item in api.searchAuctions('player', defId=defId, max_buy=bidDetails[defId]['maxBid'], start=0, page_size=50):
+                for item in api.searchAuctions('player', defId=player.playerid, max_buy=player.maxBuy, start=0, page_size=50):
                     # player safety checks for every possible bid
                     if listed >= settings['maxPlayer'] or api.credits < settings['minCredits']:
                         break
@@ -108,8 +101,8 @@ def bid(q, api, playerList, settings):
                 # Search first 50 items in my price range to bid on within 5 minutes
                 if not settings['snipeOnly']:
                     bidon = 0
-                    subtract = decrement(bidDetails[defId]['maxBid'])
-                    for item in api.searchAuctions('player', defId=defId, max_price=bidDetails[defId]['maxBid']-subtract, start=0, page_size=50):
+                    subtract = decrement(player.maxBuy)
+                    for item in api.searchAuctions('player', defId=player.playerid, max_price=player.maxBuy-subtract, start=0, page_size=50):
                         # player safety checks for every possible bid
                         # Let's look at last 5 minutes for now and bid on 5 players max
                         if item['expires'] > 300 or bidon >= 5 or listed >= settings['maxPlayer'] or api.credits < settings['minCredits']:
@@ -149,11 +142,13 @@ def bid(q, api, playerList, settings):
                 for item in api.tradeStatus([tradeId for tradeId in trades]):
                     item['resourceId'] = trades[item['tradeId']]
                     baseId = str(abs(item['resourceId'] + 0x80000000))
-                    if baseId not in bidDetails:
+
+                    if baseId not in playersIds:
                         continue
-                    maxBid = bidDetails[baseId]['maxBid']
-                    sell = bidDetails[baseId]['sell']
-                    binPrice = bidDetails[baseId]['binPrice']
+
+                    maxBid = playersIds[baseId].maxBuy
+                    sell = playersIds[baseId].sell
+                    binPrice = playersIds[baseId].bin
                     # How many of this item do we already have listed?
                     listed = sum([str(api.baseId(trade['resourceId'])) == baseId for trade in tradepile])
 
@@ -228,11 +223,11 @@ def bid(q, api, playerList, settings):
             if binWon:
                 for item in api.unassigned():
                     baseId = str(abs(item['resourceId'] + 0x80000000))
-                    if baseId not in bidDetails:
+                    if baseId not in playersIds:
                         continue
-                    maxBid = bidDetails[baseId]['maxBid']
-                    sell = bidDetails[baseId]['sell']
-                    binPrice = bidDetails[baseId]['binPrice']
+
+                    sell = playersIds[baseId].sell
+                    binPrice = playersIds[baseId].bin
 
                     tradeId = item['tradeId'] if item['tradeId'] is not None else -1
                     asset = api.cardInfo(item['resourceId'])
@@ -272,9 +267,9 @@ def bid(q, api, playerList, settings):
                     q.put('%s    Manually re-listing %d players.\n' % (time.strftime('%Y-%m-%d %H:%M:%S'), expired))
                     for i in tradepile:
                         baseId = str(abs(i['resourceId'] + 0x80000000))
-                        if baseId in bidDetails:
-                            sell = i['startingBid'] if settings['relistAll'] else bidDetails[baseId]['sell']
-                            binPrice = i['buyNowPrice'] if settings['relistAll'] else bidDetails[baseId]['binPrice']
+                        if baseId in playersIds:
+                            sell = i['startingBid'] if settings['relistAll'] else playersIds[baseId].sell
+                            binPrice = i['buyNowPrice'] if settings['relistAll'] else playersIds[baseId].bin
                             if i['tradeState'] == 'expired' and sell and binPrice:
                                 api.sell(i['id'], sell, binPrice)
 
