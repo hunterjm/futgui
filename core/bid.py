@@ -276,6 +276,13 @@ def bid(q, api, playerList, settings):
                             binPrice = i['buyNowPrice'] if settings['relistAll'] else playersIds[baseId].bin
                             if i['tradeState'] == 'expired' and sell and binPrice:
                                 api.sell(i['id'], sell, binPrice)
+                        else:
+                            if i['tradeState'] == 'expired':
+                                # If we don't follow this player, then just relist it with the same price
+                                asset = api.cardInfo(i['resourceId'])
+                                displayName = asset['Item']['CommonName'] if asset['Item']['CommonName'] else asset['Item']['LastName']
+                                q.put('%s    Re-listing %s at the same price. (Player not in target list)\n' % (time.strftime('%Y-%m-%d %H:%M:%S'), displayName))
+                                api.sell(i['id'], i['startingBid'], i['buyNowPrice'])
 
             # Log sold items
             sold = sum([i['tradeState'] == 'closed' for i in tradepile])
