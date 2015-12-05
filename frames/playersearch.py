@@ -3,13 +3,13 @@ import json
 import requests
 import multiprocessing as mp
 import core.constants as constants
-import pickle
 
 from core.editabletreeview import EditableTreeview
 from os.path import expanduser
 from frames.base import Base
 from PIL import Image, ImageTk
 from core.playercard import create
+from core.model.player import Player, PlayerEncoder
 
 
 class PlayerSearch(Base):
@@ -117,10 +117,17 @@ class PlayerSearch(Base):
 
     def load_players_from_file(self):
         try:
-            with open(constants.PLAYERS_FILE, 'rb') as f:
-                self.allPlayers = pickle.load(f)
-        except:
+            with open(constants.PLAYERS_FILE, 'r') as f:
+                self.allPlayers = json.load(f)
+        except Exception as e:
+            print("Error while loading players file")
             self.allPlayers = {}
+
+        # At this stage, allPlayers is a dictionary of lists of dictionaries
+        for user in self.allPlayers:
+            userPlayersList = self.allPlayers[user]
+            userPlayers = [Player(p) for p in userPlayersList]
+            self.allPlayers[user] = userPlayers
 
     def search(self, event=None):
         self.kill_job()
@@ -178,8 +185,8 @@ class PlayerSearch(Base):
 
     def save_players_list(self):
         self.allPlayers[self.controller.user] = self.userPlayers
-        with open(constants.PLAYERS_FILE, 'wb') as f:
-            pickle.dump(self.allPlayers, f)
+        with open(constants.PLAYERS_FILE, 'w') as f:
+            json.dump(self.allPlayers, f, cls=PlayerEncoder)
 
     def _on_inplace_edit(self, event):
         col, item = self.tree.get_event_info()
@@ -244,26 +251,8 @@ class PlayerSearch(Base):
         self.userPlayers = self.allPlayers[self.controller.user]
 
         # Add each player to the list
-        for item in self.userPlayers:
-            self.add_player(item, write=False)
-
-class Player():
-    """
-    Represents a player
-    """
-    def __init__(self, item):
-        details = item['player'] # this is the original dictionary
-
-        self.playerid = details['id']
-        self.displayName = details['commonName'] if details['commonName'] is not '' else details['lastName']
-        self.position = details['position']
-        self.rating = details['rating']
-        self.details = details
-
-        self.maxBuy = 0
-        self.sell = 0
-        self.bin = 0
-        self.enabled = 'yes'
+        for player in self.userPlayers:
+            self.add_player(player, write=False)
 
 from frames.login import Login
 from frames.watch import Watch
