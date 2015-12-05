@@ -169,7 +169,8 @@ class PlayerSearch(Base):
 
         # Bind an action that will add a player in the list on click
         lbl.bind("<Button-1>", lambda e, player=player: self.add_player(Player(
-            { 'player': player })
+            { 'player': player, 'buy': 0, 'sell': 0, 'bin': 0
+              })
         ))
 
     def add_player(self, player, write=True):
