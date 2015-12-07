@@ -78,7 +78,7 @@ class Watch(Base):
         try:
             status = self.q.get(False)
             if isinstance(status, FutError):
-                if isinstance(msg, ExpiredSession):
+                if isinstance(status, ExpiredSession):
                     self._errorCount += 3
                 else:
                     self._errorCount += 1
