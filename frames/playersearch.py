@@ -9,6 +9,7 @@ from os.path import expanduser
 from frames.base import Base
 from PIL import Image, ImageTk
 from core.playercard import create
+from core.model.player import Player, PlayerEncoder
 
 
 class PlayerSearch(Base):
@@ -16,10 +17,16 @@ class PlayerSearch(Base):
         Base.__init__(self, master, controller)
         self.master = master
         self.url = 'https://www.easports.com/uk/fifa/ultimate-team/api/fut/item'
+
+        # Track the current job to be able to interrupt it, if needed
         self._job = None
-        self.player = tk.StringVar()
-        self._playerName = ''
-        search = tk.Entry(self, textvariable=self.player)
+
+        # Track the currently searched player name
+        self.searchedPlayerName = ''
+
+        # Add search bar
+        self.issuedPlayerName = tk.StringVar()
+        search = tk.Entry(self, textvariable=self.issuedPlayerName)
         search.bind('<KeyRelease>', self.search)
         search.bind('<Return>', self.lookup)
         search.grid(column=0, row=0, columnspan=2, sticky='we')
@@ -70,7 +77,7 @@ class PlayerSearch(Base):
         canvas.bind('<Configure>', _configure_canvas)
 
         # Add a treeview to display selected players
-        self.tree = EditableTreeview(self, columns=('position', 'rating', 'buy', 'sell', 'bin', 'actions'), selectmode='browse', height=8)
+        self.tree = EditableTreeview(self, columns=('position', 'rating', 'buy', 'sell', 'bin', 'enabled', 'actions'), selectmode='browse', height=8)
         self.tree.heading('#0', text='Name', anchor='w')
         self.tree.column('position', width=100, anchor='center')
         self.tree.heading('position', text='Position')
@@ -82,6 +89,8 @@ class PlayerSearch(Base):
         self.tree.heading('sell', text='Sell For')
         self.tree.column('bin', width=100, anchor='center')
         self.tree.heading('bin', text='Sell For BIN')
+        self.tree.column('enabled', width=50, anchor='center')
+        self.tree.heading('enabled', text='Enabled')
         self.tree.column('actions', width=20, anchor='center')
         self.tree.bind('<<TreeviewInplaceEdit>>', self._on_inplace_edit)
         self.tree.bind('<<TreeviewCellEdited>>', self._on_cell_edited)
@@ -95,15 +104,8 @@ class PlayerSearch(Base):
 
         self._del_btn = tk.Button(self.tree, text='-', command=self._on_del_clicked)
 
-        # Search for existing list
-        self._playerFile = {}
-        self._playerList = []
-        try:
-            with open(constants.PLAYERS_FILE, 'r') as f:
-                self._playerFile = json.load(f)
-                self._playerList = []
-        except:
-            pass
+        # Load existing players
+        self.load_players_from_file()
 
         self.grid_columnconfigure(0, weight=1)
         self.grid_columnconfigure(1, weight=1)
@@ -113,29 +115,46 @@ class PlayerSearch(Base):
         self.grid_rowconfigure(3, weight=0)
         self.grid_rowconfigure(4, weight=0)
 
+    def load_players_from_file(self):
+        try:
+            with open(constants.PLAYERS_FILE, 'r') as f:
+                self.allPlayers = json.load(f)
+        except Exception as e:
+            print("Error while loading players file")
+            self.allPlayers = {}
+
+        # At this stage, allPlayers is a dictionary of lists of dictionaries
+        for user in self.allPlayers:
+            userPlayersList = self.allPlayers[user]
+            userPlayers = [Player(p) for p in userPlayersList]
+            self.allPlayers[user] = userPlayers
+
     def search(self, event=None):
         self.kill_job()
 
         # make sure it's a different name
-        if self._playerName != self.player.get():
-            self._playerName = self.player.get()
+        if self.searchedPlayerName != self.issuedPlayerName.get():
+            self.searchedPlayerName = self.issuedPlayerName.get()
             self._job = self.after(500, self.lookup)
 
     def lookup(self, event=None):
         self.kill_job()
-        payload = {'jsonParamObject': json.dumps({'name': self._playerName})}
+        payload = {'jsonParamObject': json.dumps({'name': self.searchedPlayerName})}
         response = requests.get(self.url, params=payload).json()
-        self.controller.status.set_status('Found %d matches for "%s"' % (response['totalResults'], self._playerName))
+        self.controller.status.set_status('Found %d matches for "%s"' % (response['totalResults'], self.searchedPlayerName))
         for child in self.interior.winfo_children():
             child.destroy()
         p = mp.Pool(processes=mp.cpu_count())
         results = [p.apply_async(create, (player,)) for player in response['items']]
         self.master.config(cursor='wait')
         self.master.update()
+
+        # Load a player card for each result
         i = 0
         for r in results:
             self.load_player(r.get(), response['items'][i])
             i += 1
+
         self.master.config(cursor='')
         self.master.update()
 
@@ -147,28 +166,28 @@ class PlayerSearch(Base):
         lbl.config(cursor='pencil')
         lbl.image = img
         self.update_idletasks()
-        lbl.bind("<Button-1>", lambda e, player=player: self.add_player({
-            'player': player,
-            'buy': 0,
-            'sell': 0,
-            'bin': 0
-        }))
 
-    def add_player(self, item, write=True):
-        player = item['player']
-        displayName = player['commonName'] if player['commonName'] is not '' else player['lastName']
+        # Bind an action that will add a player in the list on click
+        lbl.bind("<Button-1>", lambda e, player=player: self.add_player(Player(
+            { 'player': player, 'buy': 0, 'sell': 0, 'bin': 0
+              })
+        ))
+
+    def add_player(self, player, write=True):
         try:
-            self.tree.insert('', 'end', player['id'], text=displayName, values=(player['position'], player['rating'], item['buy'], item['sell'], item['bin']))
-            if write:
-                self._playerList.append(item)
-                self.save_list()
+            self.tree.insert('', 'end', player.playerid, text=player.displayName, values=(player.position,
+                                player.rating, player.maxBuy, player.sell, player.bin, player.enabled))
         except:
             pass
 
-    def save_list(self):
-        self._playerFile[self.controller.user] = self._playerList
+        if write:
+            self.userPlayers.append(player)
+            self.save_players_list()
+
+    def save_players_list(self):
+        self.allPlayers[self.controller.user] = self.userPlayers
         with open(constants.PLAYERS_FILE, 'w') as f:
-                json.dump(self._playerFile, f)
+            json.dump(self.allPlayers, f, cls=PlayerEncoder)
 
     def _on_inplace_edit(self, event):
         col, item = self.tree.get_event_info()
@@ -176,36 +195,44 @@ class PlayerSearch(Base):
             self.tree.inplace_entry(col, item)
         elif col in ('actions',):
             self.tree.inplace_custom(col, item, self._del_btn)
+        elif col in ('enabled',):
+            self.tree.inplace_checkbutton(col, item, onvalue="yes", offvalue="no")
 
     def _on_del_clicked(self):
         sel = self.tree.selection()
         if sel:
-            item = sel[0]
-            self.tree.delete(item)
-            del self._playerList[next(i for (i, d) in enumerate(self._playerList) if d['player']['id'] == item)]
-            self.save_list()
+            p_id = sel[0]
+            self.tree.delete(p_id)
+            del self.userPlayers[next(i for (i, player) in enumerate(self.userPlayers) if player.playerid == p_id)]
+            self.save_players_list()
 
     def _on_cell_edited(self, event):
         col, item = self.tree.get_event_info()
         values = self.tree.item(item, 'values')
-        for player in self._playerList:
-            if player['player']['id'] == item:
-                player['buy'] = int(values[2])
-                player['sell'] = int(values[3])
-                player['bin'] = int(values[4])
+        for player in self.userPlayers:
+            if player.playerid == item:
+                player.maxBuy = int(values[2])
+                player.sell = int(values[3])
+                player.bin = int(values[4])
+                player.enabled = str(values[5])
                 break
-        self.save_list()
+        self.save_players_list()
 
     def show_bid(self):
-        if len(self._playerList) > 0:
-            self.controller.show_frame(Bid, playerFile=self._playerFile, playerList=self._playerList)
+        if len(self.userPlayers) > 0:
+            # pass the list of only enabled players
+            enabledPlayers = list(filter(lambda x: x.enabled == 'yes', self.userPlayers))
+            self.controller.show_frame(Bid, userPlayers=enabledPlayers)
 
     def show_watch(self):
         sel = self.tree.selection()
         if sel:
-            item = sel[0]
-            item = self._playerList[next(i for (i, d) in enumerate(self._playerList) if d['player']['id'] == item)]
-            self.controller.show_frame(Watch, player=item['player'])
+            p_id = sel[0]
+            player = next(filter(lambda x: x.playerid == p_id, self.userPlayers))
+            self.controller.show_frame(Watch, player=player.details)
+        else:
+            from tkinter import messagebox
+            messagebox.showerror("Error","Select a player from the list first!")
 
     def kill_job(self):
         if self._job is not None:
@@ -217,22 +244,16 @@ class PlayerSearch(Base):
         if self.controller.api is None:
             self.controller.show_frame(Login)
 
-        # Backwards compatability
-        if isinstance(self._playerFile, list):
-            self._playerList = self._playerFile
-            self._playerFile = {
-                self.controller.user: self._playerList
-            }
-            self.save_list()
-
         # Check if we have a list for this user
-        if self.controller.user not in self._playerFile:
-            self._playerFile[self.controller.user] = []
+        if self.controller.user not in self.allPlayers:
+            self.allPlayers[self.controller.user] = []
 
-        self._playerList = self._playerFile[self.controller.user]
-        for item in self._playerList:
-            self.add_player(item, write=False)
+        # Extract from the all players file only the players belonging to the current user
+        self.userPlayers = self.allPlayers[self.controller.user]
 
+        # Add each player to the list
+        for player in self.userPlayers:
+            self.add_player(player, write=False)
 
 from frames.login import Login
 from frames.watch import Watch
