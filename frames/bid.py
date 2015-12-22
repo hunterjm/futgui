@@ -107,7 +107,7 @@ class Bid(Base):
         back = tk.Button(options, bg='#1d93ab', text='Back to Player Search', command=self.playersearch)
         back.grid(column=0, row=0, sticky='we')
 
-        self.tree = ttk.Treeview(options, columns=('buy', 'sell', 'bin'), selectmode='browse')
+        self.tree = ttk.Treeview(options, columns=('buy', 'sell', 'bin', 'won'), selectmode='browse')
         self.tree.heading('#0', text='Name', anchor='w')
         self.tree.column('buy', width=50, anchor='center')
         self.tree.heading('buy', text='Max Bid')
@@ -115,6 +115,8 @@ class Bid(Base):
         self.tree.heading('sell', text='Sell')
         self.tree.column('bin', width=50, anchor='center')
         self.tree.heading('bin', text='BIN')
+        self.tree.column('won', width=50, anchor='center')
+        self.tree.heading('won', text='# Won')
         self.tree.grid(column=0, row=1, sticky='ns')
 
         form = tk.Frame(options, padx=15, pady=15)
@@ -325,6 +327,8 @@ class Bid(Base):
                         self.auctionStatus.update_status(msg[0], time.strftime('%Y-%m-%d %H:%M:%S'), msg[0].currentBid, tag='lost')
                     elif (msg[1] == EventType.BIDWON or msg[1] == EventType.BIN):
                         self.auctionStatus.update_status(msg[0], time.strftime('%Y-%m-%d %H:%M:%S'), msg[0].currentBid, tag='won')
+                        defId = str(abs(msg[0].resourceId + 0x80000000))
+                        self.tree.set(defId, 'won', int(self.tree.set(defId, 'won'))+1)
                     elif msg[1] == EventType.SELLING:
                         self.auctionStatus.update_status(msg[0], time.strftime('%Y-%m-%d %H:%M:%S'), msg[0].currentBid, tag='selling')
                     elif msg[1] == EventType.SOLD:
@@ -424,7 +428,7 @@ class Bid(Base):
         for item in self.args['playerList']:
             displayName = item['player']['commonName'] if item['player']['commonName'] is not '' else item['player']['lastName']
             try:
-                self.tree.insert('', 'end', item['player']['id'], text=displayName, values=(item['buy'], item['sell'], item['bin']))
+                self.tree.insert('', 'end', item['player']['id'], text=displayName, values=(item['buy'], item['sell'], item['bin'], 0))
             except:
                 pass
 
