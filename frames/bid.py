@@ -270,6 +270,8 @@ class Bid(Base):
         item['buy'] = roundBid(sell*self.settings['buy'])
         item['sell'] = roundBid(sell*self.settings['sell'])
         item['bin'] = roundBid(sell*self.settings['bin'])
+        if item['bin'] <= item['sell']:
+            item['bin'] = item['sell'] + increment(item['sell'])
         self.tree.set(item['player']['id'], 'buy', item['buy'])
         self.tree.set(item['player']['id'], 'sell', item['sell'])
         self.tree.set(item['player']['id'], 'bin', item['bin'])
