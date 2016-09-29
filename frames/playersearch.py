@@ -15,7 +15,7 @@ class PlayerSearch(Base):
     def __init__(self, master, controller):
         Base.__init__(self, master, controller)
         self.master = master
-        self.url = 'https://www.easports.com/uk/fifa/ultimate-team/api/fut/item'
+        self.url = 'https://www.easports.com/fifa/ultimate-team/api/fut/item'
         self._job = None
         self.player = tk.StringVar()
         self._playerName = ''
