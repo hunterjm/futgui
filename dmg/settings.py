@@ -17,7 +17,7 @@ import os.path
 
 # .. Useful stuff ..............................................................
 
-application = defines.get('app', 'dist/FIFA 16 Auto Buyer.app')
+application = defines.get('app', 'dist/FIFA 17 Auto Buyer.app')
 appname = os.path.basename(application)
 
 def icon_from_app(app_path):
