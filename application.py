@@ -47,7 +47,7 @@ class Application(tk.Frame):
             # will be the one that is visible.
             frame.grid(column=0, row=1, sticky='news')
 
-        self.show_frame(PlayerSearch)
+        self.show_frame(Login)
 
     def show_frame(self, c, **kwargs):
         '''Show a frame for the given class'''

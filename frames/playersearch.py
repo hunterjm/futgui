@@ -214,8 +214,8 @@ class PlayerSearch(Base):
 
     def active(self):
         Base.active(self)
-        # if self.controller.api is None:
-        #     self.controller.show_frame(Login)
+        if self.controller.api is None:
+            self.controller.show_frame(Login)
 
         # Backwards compatability
         if isinstance(self._playerFile, list):
