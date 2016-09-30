@@ -31,6 +31,7 @@ def create(player, cards=None, cardinfo=None):
         cardinfo[player['color']]['width'],
         cardinfo[player['color']]['position'] + cardinfo[player['color']]['height']
     ))
+
     card = Image.new("RGB", cardbg.size, (29, 147, 171))
     card.paste(cardbg, cardbg)
 
@@ -39,32 +40,32 @@ def create(player, cards=None, cardinfo=None):
         r = requests.get(player['specialImages']['largeTOTWImgUrl'])
     else:
         r = requests.get(player['headshot']['largeImgUrl'])
-    headshot = Image.open(BytesIO(r.content))
-    card.paste(headshot, (cardinfo[player['color']]['width']-headshot.size[1]-3, 40), headshot)
+    headshot = Image.open(BytesIO(r.content)).convert('RGBA')
+    card.paste(headshot, (cardinfo[player['color']]['width']-headshot.size[1]-7, 40), headshot)
 
     # Rating
     renderedSize = _font25.getsize(str(player['rating']))
     rating = Image.new('RGBA', renderedSize, (255, 255, 255, 0))
     d = ImageDraw.Draw(rating)
     d.text((0, 0), str(player['rating']), font=_font25, fill=(54, 33, 27, 255))
-    card.paste(rating, (45, 20), rating)
+    card.paste(rating, (42, 30), rating)
 
     # Position
     renderedSize = _font25.getsize(str(player['position']))
     position = Image.new('RGBA', renderedSize, (255, 255, 255, 0))
     d = ImageDraw.Draw(position)
     d.text((0, 0), str(player['position']), font=_font16, fill=(54, 33, 27, 255))
-    card.paste(position, (45, 50), position)
+    card.paste(position, (42, 60), position)
 
     # club image
     r = requests.get(player['club']['imageUrls']['normal']['large'])
-    club = Image.open(BytesIO(r.content))
-    card.paste(club, (38, 76), club)
+    club = Image.open(BytesIO(r.content)).convert('RGBA')
+    card.paste(club, (35, 85), club)
 
     # nation image
     r = requests.get(player['nation']['imageUrls']['large'])
-    nation = Image.open(BytesIO(r.content))
-    card.paste(nation, (38, 123), nation)
+    nation = Image.open(BytesIO(r.content)).convert('RGBA')
+    card.paste(nation, (35, 130), nation)
 
     if player['color'][0:3] == 'tot':
         fillColor = (255, 234, 128, 255)
