@@ -148,8 +148,9 @@ def bid(q, api, playerList, settings):
                 q.put('%s    Updating watched items...\n' % (time.strftime('%Y-%m-%d %H:%M:%S')))
                 for item in api.tradeStatus([tradeId for tradeId in trades]):
                     item['resourceId'] = trades[item['tradeId']]
-                    baseId = str(abs(item['resourceId'] + 0x80000000))
+                    baseId = str(api.baseId(item['resourceId']))
                     if baseId not in bidDetails:
+                        q.put('%s        Trade not found - baseId: %s\n' % (time.strftime('%Y-%m-%d %H:%M:%S'), baseId))
                         continue
                     maxBid = bidDetails[baseId]['maxBid']
                     sell = bidDetails[baseId]['sell']
@@ -159,6 +160,7 @@ def bid(q, api, playerList, settings):
 
                     tradeId = item['tradeId']
                     if tradeId not in trades:
+                        q.put('%s        Trade not found - tradeId: %s\n' % (time.strftime('%Y-%m-%d %H:%M:%S'), tradeId))
                         continue
 
                     asset = api.cardInfo(trades[tradeId])
@@ -227,8 +229,9 @@ def bid(q, api, playerList, settings):
             # buy now goes directly to unassigned now
             if binWon:
                 for item in api.unassigned():
-                    baseId = str(abs(item['resourceId'] + 0x80000000))
+                    baseId = str(api.baseId(item['resourceId']))
                     if baseId not in bidDetails:
+                        q.put('%s    Trade not found for BIN - baseId: %s\n' % (time.strftime('%Y-%m-%d %H:%M:%S'), baseId))
                         continue
                     maxBid = bidDetails[baseId]['maxBid']
                     sell = bidDetails[baseId]['sell']
@@ -271,7 +274,7 @@ def bid(q, api, playerList, settings):
                 if not settings['relistAll'] or relistFailed:
                     q.put('%s    Manually re-listing %d players.\n' % (time.strftime('%Y-%m-%d %H:%M:%S'), expired))
                     for i in tradepile:
-                        baseId = str(abs(i['resourceId'] + 0x80000000))
+                        baseId = str(api.baseId(i['resourceId']))
                         if baseId in bidDetails:
                             sell = i['startingBid'] if settings['relistAll'] else bidDetails[baseId]['sell']
                             binPrice = i['buyNowPrice'] if settings['relistAll'] else bidDetails[baseId]['binPrice']
