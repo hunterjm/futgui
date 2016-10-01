@@ -327,7 +327,7 @@ class Bid(Base):
                         self.auctionStatus.update_status(msg[0], time.strftime('%Y-%m-%d %H:%M:%S'), msg[0].currentBid, tag='lost')
                     elif (msg[1] == EventType.BIDWON or msg[1] == EventType.BIN):
                         self.auctionStatus.update_status(msg[0], time.strftime('%Y-%m-%d %H:%M:%S'), msg[0].currentBid, tag='won')
-                        defId = str(abs(msg[0].resourceId + 0x80000000))
+                        defId = str(self.controller.api.baseId(msg[0].resourceId))
                         self.tree.set(defId, 'won', int(self.tree.set(defId, 'won'))+1)
                     elif msg[1] == EventType.SELLING:
                         self.auctionStatus.update_status(msg[0], time.strftime('%Y-%m-%d %H:%M:%S'), msg[0].currentBid, tag='selling')
