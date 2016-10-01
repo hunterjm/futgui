@@ -1,4 +1,4 @@
 Pillow
 requests
-fut
+git+https://github.com/oczkers/fut.git#egg=fut
 macholib
