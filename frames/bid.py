@@ -261,7 +261,7 @@ class Bid(Base):
             self.controller.api.setRequestDelay(60/self.settings['rpm'])
         credits = self.controller.api.credits
         login = self.controller.get_frame(Login)
-        platform = login.platform.get()
+        platform = 'alwayspaypal'
         donateMsg = 'donate 10k coins to the developer' if platform == 'xbox' else 'make a small donation through PayPal'
         if credits >= 100000:
             self._lastDonate = time.time()
