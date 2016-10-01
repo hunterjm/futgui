@@ -47,93 +47,123 @@
         "height": 316,
         "width": 202
     },
-    "aqua": {
+    "champions_bronze": {
         "image": "group1",
-		"position": 0,
-        "height": 358,
-        "width": 252
-    },
-    "easports": {
-        "image": "group1",
-		"position": 358,
+        "position": 0,
         "height": 316,
         "width": 202
     },
-    "green": {
+    "champions_gold": {
         "image": "group1",
-		"position": 674,
+        "position": 316,
+        "height": 316,
+        "width": 202
+    },
+    "champions_silver": {
+        "image": "group1",
+        "position": 632,
+        "height": 316,
+        "width": 202
+    },
+    "futties_winner": {
+        "image": "group1",
+        "position": 948,
+        "height": 316,
+        "width": 202
+    },
+    "imotm": {
+        "image": "group1",
+		"position": 1264,
         "height": 316,
         "width": 202
     },
     "motm": {
         "image": "group1",
-		"position": 990,
+		"position": 1580,
+        "height": 316,
+        "width": 202
+    },
+    "ones_to_watch": {
+        "image": "group1",
+		"position": 1896,
         "height": 316,
         "width": 202
     },
     "pink": {
         "image": "group1",
-		"position": 1306,
+        "position": 2212,
         "height": 316,
         "width": 202
     },
     "purple": {
         "image": "group1",
-		"position": 1622,
+		"position": 2528,
+        "height": 316,
+        "width": 202
+    },
+    "record_breaker": {
+        "image": "group1",
+        "position": 2844,
+        "height": 316,
+        "width": 202
+    },
+    "sbc_base": {
+        "image": "group1",
+        "position": 3160,
         "height": 316,
         "width": 202
     },
     "teal": {
         "image": "group1",
-		"position": 1938,
+        "position": 3476,
         "height": 316,
         "width": 202
     },
     "tots_bronze": {
         "image": "group1",
-		"position": 2254,
+		"position": 3792,
         "height": 316,
         "width": 202
     },
     "tots_gold": {
         "image": "group1",
-		"position": 2570,
+		"position": 4108,
         "height": 316,
         "width": 202
     },
     "tots_silver": {
         "image": "group1",
-		"position": 2886,
+		"position": 4424,
         "height": 316,
         "width": 202
     },
     "totw_bronze": {
         "image": "group1",
-		"position": 3202,
+		"position": 4740,
         "height": 316,
         "width": 202
     },
     "totw_gold": {
         "image": "group1",
-		"position": 3518,
+		"position": 5056,
         "height": 316,
         "width": 202
     },
     "totw_silver": {
         "image": "group1",
-		"position": 3834,
+		"position": 5372,
         "height": 316,
         "width": 202
     },
     "toty": {
         "image": "group1",
-		"position": 4150,
+		"position": 5688,
         "height": 316,
         "width": 202
     },
     "concept": {
         "image": "group2",
-		"position": 316,
+		"position": 0,
         "height": 316,
         "width": 202
     }

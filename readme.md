@@ -22,5 +22,5 @@ make macbundle
 ### Build (Windows):
 Make sure to delete `build` and `dist` folders before re-building.
 ```
-pyinstaller '.\FIFA 16 Auto Buyer.spec'
+pyinstaller '.\FIFA 17 Auto Buyer.spec'
 ```

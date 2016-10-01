@@ -5,7 +5,7 @@ my_data = [('.\\images', 'images'),
           ('.\\fonts', 'fonts')]
 
 
-a = Analysis(['FIFA 16 Auto Buyer.py'],
+a = Analysis(['FIFA 17 Auto Buyer.py'],
              pathex=['..\\fut', '.'],
              binaries=None,
              datas=my_data,
@@ -21,7 +21,7 @@ pyz = PYZ(a.pure, a.zipped_data,
 exe = EXE(pyz,
           a.scripts,
           exclude_binaries=True,
-          name='FIFA 16 Auto Buyer',
+          name='FIFA 17 Auto Buyer',
           debug=False,
           strip=None,
           upx=True,
@@ -32,4 +32,4 @@ coll = COLLECT(exe,
                a.datas,
                strip=None,
                upx=True,
-               name='FIFA 16 Auto Buyer')
+               name='FIFA 17 Auto Buyer')
