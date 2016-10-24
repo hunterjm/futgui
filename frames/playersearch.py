@@ -125,6 +125,12 @@ class PlayerSearch(Base):
         self.kill_job()
         payload = {'jsonParamObject': json.dumps({'name': self._playerName})}
         response = requests.get(self.url, params=payload).json()
+        # Little fix for new special cards e.g halloween cards, now shows an TOTW-Card instead
+        # (seems like a problem with the Api not getting the newer colors?)
+        j = 0
+        for _len_ in response:
+            if response['items'][j]['color'] == "":
+                response['items'][j]['color'] = "totw_gold"
         self.controller.status.set_status('Found %d matches for "%s"' % (response['totalResults'], self._playerName))
         for child in self.interior.winfo_children():
             child.destroy()
