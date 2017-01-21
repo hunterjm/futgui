@@ -1,3 +1,5 @@
+# NOTE: This auto buyer is no longer being actively maintained in favor of my [other project](https://github.com/hunterjm/fifa-autobuyer/releases).
+
 # Releases
 Download pre-built releases on the [releases](https://github.com/hunterjm/futgui/releases) page.
 
