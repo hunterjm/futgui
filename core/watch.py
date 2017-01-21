@@ -12,11 +12,15 @@ def lowestBin(q, api, defIds):
         lowest = buy
         items = api.searchAuctions('player', defId=defId, max_buy=buy, page_size=50)
         if items:
-            lowest = min([i['buyNowPrice'] for i in items])
-            num = sum([i['buyNowPrice'] == lowest for i in items])
+            buyNowArray = [i['buyNowPrice'] for i in items]
+            # Use the third lowest as result, to eliminate unusual low data point.
+            lowest = sorted(buyNowArray)[min(2, len(buyNowArray) - 1)]
+            num = sum([i['buyNowPrice'] <= lowest for i in items])
             # If we have 50 of the same result, go one lower
             if num == 50:
                 lowest -= decrement(lowest)
+            if num < 50:
+                return (lowest, num)
             if buy == 0 or lowest < buy:
                 return find(api, defId, lowest, num)
         return (lowest, num)
